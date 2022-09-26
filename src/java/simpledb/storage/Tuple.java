@@ -82,6 +82,7 @@ public class Tuple implements Serializable {
      *
      * where \t is any whitespace (except a newline)
      */
+    @Override
     public String toString() {
         // some code goes here
         throw new UnsupportedOperationException("Implement this");

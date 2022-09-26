@@ -13,8 +13,9 @@ public class Utility {
      */
     public static Type[] getTypes(int len) {
         Type[] types = new Type[len];
-        for (int i = 0; i < len; ++i)
+        for (int i = 0; i < len; ++i) {
             types[i] = Type.INT_TYPE;
+        }
         return types;
     }
 
@@ -24,8 +25,9 @@ public class Utility {
      */
     public static String[] getStrings(int len, String val) {
         String[] strings = new String[len];
-        for (int i = 0; i < len; ++i)
+        for (int i = 0; i < len; ++i) {
             strings[i] = val + i;
+        }
         return strings;
     }
 
