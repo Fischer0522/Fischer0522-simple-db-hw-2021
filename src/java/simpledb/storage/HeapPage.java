@@ -18,7 +18,7 @@ import java.io.*;
  *
  */
 public class HeapPage implements Page {
-
+    // 一个page实现一个表，和一张表一一对应
     final HeapPageId pid;
     final TupleDesc td;
     final byte[] header;
@@ -52,14 +52,16 @@ public class HeapPage implements Page {
 
         // allocate and read the header slots of this page
         header = new byte[getHeaderSize()];
-        for (int i=0; i<header.length; i++)
+        for (int i=0; i<header.length; i++) {
             header[i] = dis.readByte();
+        }
         
         tuples = new Tuple[numSlots];
         try{
             // allocate and read the actual records of this page
-            for (int i=0; i<tuples.length; i++)
+            for (int i=0; i<tuples.length; i++) {
                 tuples[i] = readNextTuple(dis,i);
+            }
         }catch(NoSuchElementException e){
             e.printStackTrace();
         }
@@ -73,7 +75,10 @@ public class HeapPage implements Page {
     */
     private int getNumTuples() {        
         // some code goes here
-        return 0;
+        // 1 bit 代表的是header的长度，每个slot有一个对应的header位
+        double floor = Math.floor((double) BufferPool.getPageSize() * 8 / ((this.td.getSize() * 8 + 1)));
+        return (int) floor;
+
 
     }
 
@@ -81,15 +86,18 @@ public class HeapPage implements Page {
      * Computes the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      * @return the number of bytes in the header of a page in a HeapFile with each tuple occupying tupleSize bytes
      */
-    private int getHeaderSize() {        
-        
+    private int getHeaderSize() {
+        // 1 bit 代表的是header的长度，每个slot有一个对应的header位，因此只需统计处有多少个slot即可
+        // 除8将bit转换为字节
+        double ceil = Math.ceil((double) getNumTuples() / 8);
         // some code goes here
-        return 0;
+        return (int) ceil;
                  
     }
     
     /** Return a view of this page before it was modified
         -- used by recovery */
+    @Override
     public HeapPage getBeforeImage(){
         try {
             byte[] oldDataRef = null;
@@ -106,6 +114,7 @@ public class HeapPage implements Page {
         return null;
     }
     
+    @Override
     public void setBeforeImage() {
         synchronized(oldDataLock)
         {
@@ -116,9 +125,11 @@ public class HeapPage implements Page {
     /**
      * @return the PageId associated with this page.
      */
+    @Override
     public HeapPageId getId() {
     // some code goes here
-    throw new UnsupportedOperationException("implement this");
+        return this.pid;
+
     }
 
     /**
@@ -166,6 +177,7 @@ public class HeapPage implements Page {
      * @see #HeapPage
      * @return A byte array correspond to the bytes of this page.
      */
+    @Override
     public byte[] getPageData() {
         int len = BufferPool.getPageSize();
         ByteArrayOutputStream baos = new ByteArrayOutputStream(len);
@@ -269,6 +281,7 @@ public class HeapPage implements Page {
      * Marks this page as dirty/not dirty and record that transaction
      * that did the dirtying
      */
+    @Override
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
 	// not necessary for lab1
@@ -277,6 +290,7 @@ public class HeapPage implements Page {
     /**
      * Returns the tid of the transaction that last dirtied this page, or null if the page is not dirty
      */
+    @Override
     public TransactionId isDirty() {
         // some code goes here
 	// Not necessary for lab1
@@ -288,7 +302,16 @@ public class HeapPage implements Page {
      */
     public int getNumEmptySlots() {
         // some code goes here
-        return 0;
+        int numUsedSlot = 0;
+        for(byte b :header) {
+            // 统计出该bit中有多少个1，即多少个slot被使用
+            while (b != 0) {
+                numUsedSlot ++;
+
+                b &= (b-1);
+            }
+        }
+        return getNumTuples() - numUsedSlot;
     }
 
     /**
@@ -296,7 +319,12 @@ public class HeapPage implements Page {
      */
     public boolean isSlotUsed(int i) {
         // some code goes here
-        return false;
+        // 先获取到对应的字节，在从字节中找到对应的bit
+        int index = i / 8;
+        // 偏移量，用于确认在第几位bit
+        int offset = i % 8;
+        // 位与得到这一位bit
+        return (this.header[index] & (1 << offset)) != 0;
     }
 
     /**
@@ -312,8 +340,30 @@ public class HeapPage implements Page {
      * (note that this iterator shouldn't return tuples in empty slots!)
      */
     public Iterator<Tuple> iterator() {
+
         // some code goes here
-        return null;
+
+        return new Iterator<Tuple>() {
+            private int nextSlot = 0;
+            @Override
+            public boolean hasNext() {
+                // getNumTuples() - getNumEmptySlots()为当前已经使用的slot的数量
+                return nextSlot < getNumTuples() - getNumEmptySlots();
+            }
+
+            @Override
+            public Tuple next() {
+
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
+                    while (!isSlotUsed(nextSlot)) {
+                        // 获取被使用的slot
+                        nextSlot++;
+                    }
+                    return tuples[nextSlot++];
+            }
+        };
     }
 
 }

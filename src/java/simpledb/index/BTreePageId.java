@@ -90,12 +90,14 @@ public class BTreePageId implements PageId {
 	 */
 	@Override
 	public boolean equals(Object o) {
-		if (!(o instanceof BTreePageId))
+		if (!(o instanceof BTreePageId)) {
 			return false;
+		}
 		BTreePageId p = (BTreePageId)o;
 		return tableId == p.tableId && pgNo == p.pgNo && pgcateg == p.pgcateg;
 	}
 
+	@Override
 	public String toString() {
 
         return "(tableId: " + tableId +

@@ -9,7 +9,13 @@ import simpledb.transaction.TransactionId;
 
 import java.io.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
  * BufferPool manages the reading and writing of pages into memory from
@@ -27,6 +33,12 @@ public class BufferPool {
     private static final int DEFAULT_PAGE_SIZE = 4096;
 
     private static int pageSize = DEFAULT_PAGE_SIZE;
+
+    private ConcurrentHashMap<PageId,Page> buffer;
+
+    private ReadWriteLock readWriteLock;
+
+    private  int numPages;
     
     /** Default number of pages passed to the constructor. This is used by
     other classes. BufferPool should use the numPages argument to the
@@ -39,7 +51,11 @@ public class BufferPool {
      * @param numPages maximum number of pages in this buffer pool.
      */
     public BufferPool(int numPages) {
+        buffer = new ConcurrentHashMap<>(numPages);
+        this.numPages = numPages;
+        readWriteLock = new ReentrantReadWriteLock();
         // some code goes here
+
     }
     
     public static int getPageSize() {
@@ -73,8 +89,22 @@ public class BufferPool {
      */
     public  Page getPage(TransactionId tid, PageId pid, Permissions perm)
         throws TransactionAbortedException, DbException {
+        readWriteLock.readLock().lock();
+        // 暂时未实现锁相关
+        if (buffer.containsKey(pid)) {
+            return buffer.get(pid);
+        } else {
+            if (buffer.size() >= numPages) {
+                evictPage();
+                throw new DbException("full");
+            }
+            DbFile databaseFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
+            Page page = databaseFile.readPage(pid);
+            buffer.put(pid,page);
+            readWriteLock.readLock().unlock();
+            return page;
+        }
         // some code goes here
-        return null;
     }
 
     /**
