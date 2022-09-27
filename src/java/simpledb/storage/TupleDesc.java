@@ -38,6 +38,8 @@ public class TupleDesc implements Serializable {
         public String toString() {
             return fieldName + "(" + fieldType + ")";
         }
+
+
     }
 
     /**
@@ -203,12 +205,17 @@ public class TupleDesc implements Serializable {
     public static TupleDesc merge(TupleDesc td1, TupleDesc td2) {
         List<TDItem> tdItems1 = td1.tdItems;
         List<TDItem> tdItems = td2.tdItems;
-        for (TDItem t: tdItems) {
-            tdItems1.add(t);
+        List<TDItem> newTdItems = new ArrayList<>();
+
+        for (TDItem t: tdItems1) {
+            newTdItems.add(t);
+        }
+        for(TDItem t : tdItems) {
+            newTdItems.add(t);
         }
 
         // some code goes here
-        return new TupleDesc(tdItems1);
+        return new TupleDesc(newTdItems);
     }
 
     /**
@@ -225,14 +232,27 @@ public class TupleDesc implements Serializable {
     @Override
     public boolean equals(Object o) {
         // some code goes here
+        if(this.getClass().isInstance(o)){
+            TupleDesc tupleDesc = (TupleDesc) o;
+            if(numFields() == tupleDesc.numFields()){
+                for (int i=0; i<numFields(); i++) {
+                    if(!tdItems.get(i).fieldType.equals(tupleDesc.tdItems.get(i).fieldType)){
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
         return false;
     }
+
+
 
     @Override
     public int hashCode() {
         // If you want to use TupleDesc as keys for HashMap, implement this so
         // that equal objects have equals hashCode() results
-        throw new UnsupportedOperationException("unimplemented");
+        return tdItems.hashCode();
     }
 
     /**
@@ -245,6 +265,6 @@ public class TupleDesc implements Serializable {
     @Override
     public String toString() {
         // some code goes here
-        return "";
+        return tdItems.toString();
     }
 }

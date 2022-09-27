@@ -64,6 +64,7 @@ public class BTreeFile implements DbFile {
 	 * 
 	 * @return an ID uniquely identifying this BTreeFile.
 	 */
+	@Override
 	public int getId() {
 		return tableid;
 	}
@@ -84,7 +85,8 @@ public class BTreeFile implements DbFile {
 	 * @param pid - the id of the page to read from disk
 	 * @return the page constructed from the contents on disk
 	 */
-	public Page readPage(PageId pid) {
+	@Override
+    public Page readPage(PageId pid) {
 		BTreePageId id = (BTreePageId) pid;
 
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(f))) {
@@ -137,6 +139,7 @@ public class BTreeFile implements DbFile {
 	 * 
 	 * @param page - the page to write to disk
 	 */
+	@Override
 	public void writePage(Page page) throws IOException {
 		BTreePageId id = (BTreePageId) page.getId();
 		
@@ -423,6 +426,7 @@ public class BTreeFile implements DbFile {
 	 * many pages since parent pointers will need to be updated when an internal node splits.
 	 * @see #splitLeafPage(TransactionId, Map, BTreeLeafPage, Field)
 	 */
+	@Override
 	public List<Page> insertTuple(TransactionId tid, Tuple t)
 			throws DbException, IOException, TransactionAbortedException {
 		Map<PageId, Page> dirtypages = new HashMap<>();
@@ -798,6 +802,7 @@ public class BTreeFile implements DbFile {
 	 * many pages since parent pointers will need to be updated when an internal node merges.
 	 * @see #handleMinOccupancyPage(TransactionId, Map, BTreePage)
 	 */
+	@Override
 	public List<Page> deleteTuple(TransactionId tid, Tuple t)
 			throws DbException, IOException, TransactionAbortedException {
 		Map<PageId, Page> dirtypages = new HashMap<>();
@@ -1049,6 +1054,7 @@ public class BTreeFile implements DbFile {
 	 * @param tid - the transaction id
 	 * @return an iterator for all the tuples in this file
 	 */
+	@Override
 	public DbFileIterator iterator(TransactionId tid) {
 		return new BTreeFileIterator(this, tid);
 	}

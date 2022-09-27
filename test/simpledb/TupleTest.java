@@ -5,6 +5,7 @@ import junit.framework.JUnit4TestAdapter;
 
 import org.junit.Test;
 
+import simpledb.common.Type;
 import simpledb.common.Utility;
 import simpledb.storage.*;
 import simpledb.systemtest.SimpleDbTestBase;
@@ -29,6 +30,23 @@ public class TupleTest extends SimpleDbTestBase {
 
         assertEquals(new IntField(1), tup.getField(0));
         assertEquals(new IntField(37), tup.getField(1));
+    }
+
+    @Test
+    public void testSetFields(){
+        String[] name = Utility.getStrings(3, "test");
+        Type[] types = {Type.INT_TYPE,Type.STRING_TYPE,Type.INT_TYPE};
+        TupleDesc tupleDesc = new TupleDesc(types,name);
+        Tuple tuple = new Tuple(tupleDesc);
+        Field field = new IntField(2);
+        tuple.setField(0,field);
+        // 抛出类型不匹配的异常
+       //  tuple.setField(1,field);
+
+        Field stringField = new StringField("hello",200);
+        tuple.setField(1,stringField);
+
+
     }
 
     /**

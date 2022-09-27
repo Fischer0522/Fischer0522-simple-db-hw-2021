@@ -1,8 +1,12 @@
 package simpledb.storage;
 
+import simpledb.common.Type;
+
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Tuple maintains information about the contents of a tuple. Tuples have a
@@ -12,6 +16,9 @@ import java.util.Iterator;
 public class Tuple implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private RecordId recordId;
+    private TupleDesc tupleDesc;
+    private  List<Field> fields;
 
     /**
      * Create a new tuple with the specified schema (type).
@@ -21,6 +28,8 @@ public class Tuple implements Serializable {
      *            instance with at least one field.
      */
     public Tuple(TupleDesc td) {
+        this.tupleDesc =td;
+        fields = new ArrayList<>();
         // some code goes here
     }
 
@@ -29,7 +38,8 @@ public class Tuple implements Serializable {
      */
     public TupleDesc getTupleDesc() {
         // some code goes here
-        return null;
+
+        return this.tupleDesc;
     }
 
     /**
@@ -38,7 +48,7 @@ public class Tuple implements Serializable {
      */
     public RecordId getRecordId() {
         // some code goes here
-        return null;
+        return this.recordId;
     }
 
     /**
@@ -49,6 +59,7 @@ public class Tuple implements Serializable {
      */
     public void setRecordId(RecordId rid) {
         // some code goes here
+        this.recordId = rid;
     }
 
     /**
@@ -60,6 +71,22 @@ public class Tuple implements Serializable {
      *            new value for the field.
      */
     public void setField(int i, Field f) {
+        // 先检测索引是否符合规范
+        int maxSize = this.tupleDesc.getSize();
+        if (i < 0 || i >= maxSize) {
+            try {
+                throw new NoSuchFieldException();
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+        }
+        // 判断类型是否匹配
+        TupleDesc.TDItem tdItem = tupleDesc.tdItems.get(i);
+        if (!f.getType().equals(tdItem.fieldType) )
+        {
+            throw new UnsupportedOperationException("类型不匹配");
+        }
+        fields.add(i,f);
         // some code goes here
     }
 
@@ -70,8 +97,18 @@ public class Tuple implements Serializable {
      *            field index to return. Must be a valid index.
      */
     public Field getField(int i) {
+
+        int maxSize = this.tupleDesc.getSize();
+        if (i < 0 || i >= maxSize) {
+            try {
+                throw new NoSuchFieldException();
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
+        }
+
         // some code goes here
-        return null;
+        return fields.get(i);
     }
 
     /**
@@ -95,7 +132,7 @@ public class Tuple implements Serializable {
     public Iterator<Field> fields()
     {
         // some code goes here
-        return null;
+        return fields.iterator();
     }
 
     /**
@@ -104,5 +141,27 @@ public class Tuple implements Serializable {
     public void resetTupleDesc(TupleDesc td)
     {
         // some code goes here
+        if (this.fields == null) {
+            this.tupleDesc = td;
+        }
+        if (tupleDesc.getSize() != fields.size()) {
+            throw new UnsupportedOperationException("与field长度不匹配");
+        }
+        for (int i = 0;i < fields.size();i++) {
+            Field currentField = fields.get(i);
+            TupleDesc.TDItem targetTd = td.tdItems.get(i);
+            if (!currentField.getType().equals(targetTd.fieldType)) {
+                // 类型不匹配,尝试强转 但是未提供强转的接口，是否需要自己实现？？？
+                try {
+                    if (targetTd.fieldType == Type.INT_TYPE &&currentField.getType()==Type.STRING_TYPE) {
+
+                    }
+
+                } catch (Exception e) {
+
+                }
+            }
+        }
+
     }
 }

@@ -26,6 +26,7 @@ public class TupleDescTest extends SimpleDbTestBase {
 
         // test td1.combine(td2)
         td3 = TupleDesc.merge(td1, td2);
+
         assertEquals(3 , td3.numFields());
         assertEquals(3 * Type.INT_TYPE.getLen(), td3.getSize());
         for (int i = 0; i < 3; ++i)
