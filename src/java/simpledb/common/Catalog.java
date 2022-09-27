@@ -27,7 +27,64 @@ public class Catalog {
      * Constructor.
      * Creates a new, empty catalog.
      */
+
+    public class  TableInfo{
+
+        private TupleDesc tupleDesc;
+        private String tableName;
+        private String pkeyField;
+        private DbFile dbFile;
+
+        public TableInfo(){
+
+        };
+
+        public TableInfo(TupleDesc tupleDesc, String tableName, String pkeyField, DbFile dbFile) {
+            this.dbFile = dbFile;
+            this.pkeyField = pkeyField;
+            this.tupleDesc = tupleDesc;
+            this.tableName = tableName;
+
+
+        }
+
+        public TupleDesc getTupleDesc() {
+            return tupleDesc;
+        }
+
+        public void setTupleDesc(TupleDesc tupleDesc) {
+            this.tupleDesc = tupleDesc;
+        }
+
+        public String getTableName() {
+            return tableName;
+        }
+
+        public void setTableName(String tableName) {
+            this.tableName = tableName;
+        }
+
+        public String getPkeyField() {
+            return pkeyField;
+        }
+
+        public void setPkeyField(String pkeyField) {
+            this.pkeyField = pkeyField;
+        }
+
+        public DbFile getDbFile() {
+            return dbFile;
+        }
+
+        public void setDbFile(DbFile dbFile) {
+            this.dbFile = dbFile;
+        }
+    }
+
+    private Map<Integer,TableInfo> infoMap;
+    // infoMap的初始化存在问题
     public Catalog() {
+        infoMap = new HashMap<>();
         // some code goes here
     }
 
@@ -41,7 +98,38 @@ public class Catalog {
      * @param pkeyField the name of the primary key field
      */
     public void addTable(DbFile file, String name, String pkeyField) {
+        // 先判断是否有重复的id，是否可以考虑再建一个name的hashmap？
+        if (Objects.isNull(infoMap)) {
+            infoMap = new HashMap<>();
+        }
+        int idx = handleDuplicatedName(name);
+        if (idx == -1) {
+            infoMap.remove(infoMap.get(idx));
+        }
+
+        TableInfo tableInfo = new TableInfo();
+        tableInfo.setTableName(name);
+        tableInfo.setDbFile(file);
+        tableInfo.setPkeyField(pkeyField);
+        tableInfo.setTupleDesc(file.getTupleDesc());
+        int id = file.getId();
+        System.out.println(id);
+        infoMap.put(id,tableInfo);
         // some code goes here
+    }
+
+    private int handleDuplicatedName(String name) {
+        if (Objects.isNull(name)) {
+            throw new NoSuchElementException();
+        }
+        Set<Integer> keySet = infoMap.keySet();
+        for(Integer i : keySet) {
+            TableInfo tableInfo = infoMap.get(i);
+            if (tableInfo.getTableName().equals(name)) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void addTable(DbFile file, String name) {
@@ -65,7 +153,17 @@ public class Catalog {
      */
     public int getTableId(String name) throws NoSuchElementException {
         // some code goes here
-        return 0;
+        if (Objects.isNull(name)) {
+            throw new NoSuchElementException();
+        }
+        Set<Integer> keySet = infoMap.keySet();
+        for(Integer i : keySet) {
+            TableInfo tableInfo = infoMap.get(i);
+            if (tableInfo.getTableName().equals(name)) {
+                return i;
+            }
+        }
+        throw new NoSuchElementException();
     }
 
     /**
@@ -75,8 +173,14 @@ public class Catalog {
      * @throws NoSuchElementException if the table doesn't exist
      */
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
+
         // some code goes here
-        return null;
+        System.out.println(infoMap);
+        TableInfo tableInfo = infoMap.get(tableid);
+        if (Objects.isNull(tableInfo)) {
+            throw new NoSuchElementException();
+        }
+        return tableInfo.getTupleDesc();
     }
 
     /**
@@ -87,26 +191,28 @@ public class Catalog {
      */
     public DbFile getDatabaseFile(int tableid) throws NoSuchElementException {
         // some code goes here
-        return null;
+        return infoMap.get(tableid).getDbFile();
     }
 
     public String getPrimaryKey(int tableid) {
         // some code goes here
-        return null;
+
+        return infoMap.get(tableid).getPkeyField();
     }
 
     public Iterator<Integer> tableIdIterator() {
         // some code goes here
-        return null;
+        return infoMap.keySet().iterator();
     }
 
     public String getTableName(int id) {
         // some code goes here
-        return null;
+        return infoMap.get(id).getTableName();
     }
     
     /** Delete all tables from the catalog */
     public void clear() {
+        infoMap = null;
         // some code goes here
     }
     
