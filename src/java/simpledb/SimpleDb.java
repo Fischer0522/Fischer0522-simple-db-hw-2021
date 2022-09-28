@@ -25,10 +25,11 @@ public class SimpleDb {
                     Type[] ts = new Type[numOfAttributes];
                     char fieldSeparator = ',';
 
-                    if (args.length == 3)
-                        for (int i = 0; i < numOfAttributes; i++)
+                    if (args.length == 3) {
+                        for (int i = 0; i < numOfAttributes; i++) {
                             ts[i] = Type.INT_TYPE;
-                    else {
+                        }
+                    } else {
                         String typeString = args[3];
                         String[] typeStringAr = typeString.split(",");
                         if (typeStringAr.length != numOfAttributes) {
@@ -37,17 +38,18 @@ public class SimpleDb {
                         }
                         int index = 0;
                         for (String s : typeStringAr) {
-                            if (s.equalsIgnoreCase("int"))
+                            if (s.equalsIgnoreCase("int")) {
                                 ts[index++] = Type.INT_TYPE;
-                            else if (s.equalsIgnoreCase("string"))
+                            } else if (s.equalsIgnoreCase("string")) {
                                 ts[index++] = Type.STRING_TYPE;
-                            else {
+                            } else {
                                 System.err.println("Unknown type " + s);
                                 return;
                             }
                         }
-                        if (args.length == 5)
+                        if (args.length == 5) {
                             fieldSeparator = args[4].charAt(0);
+                        }
                     }
 
                     HeapFileEncoder.convert(sourceTxtFile, targetDatFile,

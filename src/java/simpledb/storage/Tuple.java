@@ -81,7 +81,7 @@ public class Tuple implements Serializable {
             }
         }
         // 判断类型是否匹配
-        TupleDesc.TDItem tdItem = tupleDesc.tdItems.get(i);
+        TupleDesc.TDItem tdItem = tupleDesc.getTdItems().get(i);
         if (!f.getType().equals(tdItem.fieldType) )
         {
             throw new UnsupportedOperationException("类型不匹配");
@@ -121,8 +121,11 @@ public class Tuple implements Serializable {
      */
     @Override
     public String toString() {
-        // some code goes here
-        throw new UnsupportedOperationException("Implement this");
+        return "Tuple{" +
+                "recordId=" + recordId +
+                ", tupleDesc=" + tupleDesc +
+                ", fields=" + fields +
+                '}';
     }
 
     /**
@@ -149,7 +152,7 @@ public class Tuple implements Serializable {
         }
         for (int i = 0;i < fields.size();i++) {
             Field currentField = fields.get(i);
-            TupleDesc.TDItem targetTd = td.tdItems.get(i);
+            TupleDesc.TDItem targetTd = td.getTdItems().get(i);
             if (!currentField.getType().equals(targetTd.fieldType)) {
                 // 类型不匹配,尝试强转 但是未提供强转的接口，是否需要自己实现？？？
                 try {

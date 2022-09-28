@@ -52,6 +52,7 @@ public class HeapPage implements Page {
 
         // allocate and read the header slots of this page
         header = new byte[getHeaderSize()];
+
         for (int i=0; i<header.length; i++) {
             header[i] = dis.readByte();
         }
@@ -304,6 +305,7 @@ public class HeapPage implements Page {
         // some code goes here
         int numUsedSlot = 0;
         for(byte b :header) {
+           // System.out.println(b);
             // 统计出该bit中有多少个1，即多少个slot被使用
             while (b != 0) {
                 numUsedSlot ++;
@@ -311,6 +313,9 @@ public class HeapPage implements Page {
                 b &= (b-1);
             }
         }
+
+
+
         return getNumTuples() - numUsedSlot;
     }
 

@@ -103,8 +103,8 @@ public class Catalog {
             infoMap = new HashMap<>();
         }
         int idx = handleDuplicatedName(name);
-        if (idx == -1) {
-            infoMap.remove(infoMap.get(idx));
+        if (idx != -1) {
+            infoMap.remove(idx);
         }
 
         TableInfo tableInfo = new TableInfo();
@@ -113,7 +113,6 @@ public class Catalog {
         tableInfo.setPkeyField(pkeyField);
         tableInfo.setTupleDesc(file.getTupleDesc());
         int id = file.getId();
-        System.out.println(id);
         infoMap.put(id,tableInfo);
         // some code goes here
     }
@@ -125,7 +124,7 @@ public class Catalog {
         Set<Integer> keySet = infoMap.keySet();
         for(Integer i : keySet) {
             TableInfo tableInfo = infoMap.get(i);
-            if (tableInfo.getTableName().equals(name)) {
+            if (name.equals(tableInfo.getTableName())) {
                 return i;
             }
         }
@@ -175,7 +174,7 @@ public class Catalog {
     public TupleDesc getTupleDesc(int tableid) throws NoSuchElementException {
 
         // some code goes here
-        System.out.println(infoMap);
+
         TableInfo tableInfo = infoMap.get(tableid);
         if (Objects.isNull(tableInfo)) {
             throw new NoSuchElementException();

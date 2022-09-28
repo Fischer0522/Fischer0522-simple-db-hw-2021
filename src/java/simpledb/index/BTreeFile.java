@@ -1085,7 +1085,8 @@ class BTreeFileIterator extends AbstractDbFileIterator {
 	/**
 	 * Open this iterator by getting an iterator on the first leaf page
 	 */
-	public void open() throws DbException, TransactionAbortedException {
+	@Override
+    public void open() throws DbException, TransactionAbortedException {
 		BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(
 				tid, BTreeRootPtrPage.getId(f.getId()), Permissions.READ_ONLY);
 		BTreePageId root = rootPtr.getRootId();
@@ -1126,6 +1127,7 @@ class BTreeFileIterator extends AbstractDbFileIterator {
 	/**
 	 * rewind this iterator back to the beginning of the tuples
 	 */
+	@Override
 	public void rewind() throws DbException, TransactionAbortedException {
 		close();
 		open();
@@ -1134,6 +1136,7 @@ class BTreeFileIterator extends AbstractDbFileIterator {
 	/**
 	 * close the iterator
 	 */
+	@Override
 	public void close() {
 		super.close();
 		it = null;
@@ -1170,7 +1173,8 @@ class BTreeSearchIterator extends AbstractDbFileIterator {
 	 * Open this iterator by getting an iterator on the first leaf page applicable
 	 * for the given predicate operation
 	 */
-	public void open() throws DbException, TransactionAbortedException {
+	@Override
+    public void open() throws DbException, TransactionAbortedException {
 		BTreeRootPtrPage rootPtr = (BTreeRootPtrPage) Database.getBufferPool().getPage(
 				tid, BTreeRootPtrPage.getId(f.getId()), Permissions.READ_ONLY);
 		BTreePageId root = rootPtr.getRootId();
@@ -1231,6 +1235,7 @@ class BTreeSearchIterator extends AbstractDbFileIterator {
 	/**
 	 * rewind this iterator back to the beginning of the tuples
 	 */
+	@Override
 	public void rewind() throws DbException, TransactionAbortedException {
 		close();
 		open();
@@ -1239,6 +1244,7 @@ class BTreeSearchIterator extends AbstractDbFileIterator {
 	/**
 	 * close the iterator
 	 */
+	@Override
 	public void close() {
 		super.close();
 		it = null;
