@@ -268,6 +268,7 @@ public class TestUtil {
             this.cur = low;
         }
 
+        @Override
         public void open() {
             cur = low;
         }
@@ -293,7 +294,8 @@ public class TestUtil {
             return tup;
         }
 
-		public boolean hasNext() {
+		@Override
+        public boolean hasNext() {
             return cur < high;
         }
 

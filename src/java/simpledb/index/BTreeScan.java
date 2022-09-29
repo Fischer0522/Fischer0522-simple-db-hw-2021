@@ -110,7 +110,8 @@ public class BTreeScan implements OpIterator {
 		this(tid, tableid, Database.getCatalog().getTableName(tableid), ipred);
 	}
 
-	public void open() throws DbException, TransactionAbortedException {
+	@Override
+    public void open() throws DbException, TransactionAbortedException {
 		if (isOpen)
 			throw new DbException("double open on one OpIterator.");
 
@@ -131,6 +132,7 @@ public class BTreeScan implements OpIterator {
 		return myTd;
 	}
 
+	@Override
 	public boolean hasNext() throws TransactionAbortedException, DbException {
 		if (!isOpen)
 			throw new IllegalStateException("iterator is closed");

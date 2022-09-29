@@ -11,6 +11,9 @@ import java.io.Serializable;
 public class Predicate implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private int field;
+    private Op op;
+    private Field operand;
 
     /** Constants used for return codes in Field.compare */
     public enum Op implements Serializable {
@@ -27,21 +30,29 @@ public class Predicate implements Serializable {
             return values()[i];
         }
 
+        @Override
         public String toString() {
-            if (this == EQUALS)
+            if (this == EQUALS) {
                 return "=";
-            if (this == GREATER_THAN)
+            }
+            if (this == GREATER_THAN) {
                 return ">";
-            if (this == LESS_THAN)
+            }
+            if (this == LESS_THAN) {
                 return "<";
-            if (this == LESS_THAN_OR_EQ)
+            }
+            if (this == LESS_THAN_OR_EQ) {
                 return "<=";
-            if (this == GREATER_THAN_OR_EQ)
+            }
+            if (this == GREATER_THAN_OR_EQ) {
                 return ">=";
-            if (this == LIKE)
+            }
+            if (this == LIKE) {
                 return "LIKE";
-            if (this == NOT_EQUALS)
+            }
+            if (this == NOT_EQUALS) {
                 return "<>";
+            }
             throw new IllegalStateException("impossible to reach here");
         }
 
@@ -58,6 +69,10 @@ public class Predicate implements Serializable {
      *            field value to compare passed in tuples to
      */
     public Predicate(int field, Op op, Field operand) {
+        this.field = field;
+        this.op = op;
+        this.operand = operand;
+
         // some code goes here
     }
 
@@ -67,7 +82,7 @@ public class Predicate implements Serializable {
     public int getField()
     {
         // some code goes here
-        return -1;
+        return this.field;
     }
 
     /**
@@ -76,7 +91,7 @@ public class Predicate implements Serializable {
     public Op getOp()
     {
         // some code goes here
-        return null;
+        return this.op;
     }
     
     /**
@@ -85,7 +100,7 @@ public class Predicate implements Serializable {
     public Field getOperand()
     {
         // some code goes here
-        return null;
+        return this.operand;
     }
     
     /**
@@ -98,17 +113,20 @@ public class Predicate implements Serializable {
      *            The tuple to compare against
      * @return true if the comparison is true, false otherwise.
      */
+    // 注意比较顺序，谁和谁进行比较
     public boolean filter(Tuple t) {
         // some code goes here
-        return false;
+        Field field1 = t.getField(this.field);
+        return field1.compare(this.op,this.operand);
     }
 
     /**
      * Returns something useful, like "f = field_id op = op_string operand =
      * operand_string"
      */
+    @Override
     public String toString() {
         // some code goes here
-        return "";
+        return "f = "+this.field+ "op = "+this.op.toString()+"operand ="+this.operand;
     }
 }

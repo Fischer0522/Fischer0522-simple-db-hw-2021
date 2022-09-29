@@ -700,11 +700,13 @@ class TupleArrayIterator implements OpIterator {
         this.tups = tups;
     }
 
+    @Override
     public void open() {
         it = tups.iterator();
     }
 
     /** @return true if the iterator has more items. */
+    @Override
     public boolean hasNext() {
         return it.hasNext();
     }
