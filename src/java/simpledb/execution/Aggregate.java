@@ -116,15 +116,16 @@ public class Aggregate extends Operator {
     @Override
     public void open() throws NoSuchElementException, DbException,
             TransactionAbortedException {
-
+        // 先打开child的迭代器，用于获取所有的tuple,之后迭代将所有的tuple进行merge
         child.open();
         while (child.hasNext()) {
             Tuple next = child.next();
             aggregator.mergeTupleIntoGroup(next);
         }
+        // 打开聚合迭代器，用于之后获取聚合后的结果
         opIterator = aggregator.iterator();
         opIterator.open();
-
+        // 父迭代器
         super.open();
 
         // some code goes here
@@ -140,13 +141,13 @@ public class Aggregate extends Operator {
     @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
         // some code goes here
+        // 迭代聚合之后的结果
         if(opIterator.hasNext()) {
             return opIterator.next();
         }
         return null;
 
     }
-
     @Override
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
@@ -173,7 +174,11 @@ public class Aggregate extends Operator {
 
     @Override
     public void close() {
+        super.close();
+        opIterator.close();
         child.close();
+
+
         // some code goes here
     }
 
@@ -187,6 +192,19 @@ public class Aggregate extends Operator {
     public void setChildren(OpIterator[] children) {
         // some code goes here
         child = children[0];
+        Type aFieldType = child.getTupleDesc().getFieldType(afield);
+        Type gFieldType = child.getTupleDesc().getFieldType(gfield);
+        Type[] types = new Type[]{gFieldType,aFieldType};
+        String[] names = new String[]{"groupVal","aggregateVal"};
+        this.tupleDesc = new TupleDesc(types,names);
+
+        if (aFieldType == Type.INT_TYPE) {
+            this.aggregator = new IntegerAggregator(gfield,gFieldType,afield,aop);
+        } else {
+            this.aggregator = new StringAggregator(gfield,gFieldType,afield,aop);
+        }
+
+
     }
 
 }
