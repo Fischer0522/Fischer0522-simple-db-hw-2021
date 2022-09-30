@@ -33,6 +33,7 @@ public class Delete extends Operator {
         // some code goes here
     }
 
+    @Override
     public TupleDesc getTupleDesc() {
         // some code goes here
         return null;

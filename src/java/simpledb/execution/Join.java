@@ -126,7 +126,8 @@ public class Join extends Operator {
 
 
         // some code goes here
-        // 重点为生成笛卡尔积
+        // Join操作重点为生成笛卡尔积
+        // t用于保存上一次 child1的tuple
         while (child1.hasNext() || t != null) {
             if(child1.hasNext() && t == null){
                 t = child1.next();
@@ -163,6 +164,7 @@ public class Join extends Operator {
 
                 }
             }
+            // t指向 child1的下一个tuple child2从第一个开始
             child2.rewind();
             t = null;
 

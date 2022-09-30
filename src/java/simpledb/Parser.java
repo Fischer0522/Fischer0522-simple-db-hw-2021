@@ -718,6 +718,7 @@ class TupleArrayIterator implements OpIterator {
      * @return The next tuple in the iterator, or null if there are no more
      *         tuples.
      */
+    @Override
     public Tuple next() throws
             NoSuchElementException {
         return it.next();
@@ -734,6 +735,7 @@ class TupleArrayIterator implements OpIterator {
     /**
      * Returns the TupleDesc associated with this OpIterator.
      */
+    @Override
     public TupleDesc getTupleDesc() {
         return tups.get(0).getTupleDesc();
     }
@@ -741,6 +743,7 @@ class TupleArrayIterator implements OpIterator {
     /**
      * Closes the iterator.
      */
+    @Override
     public void close() {
     }
 

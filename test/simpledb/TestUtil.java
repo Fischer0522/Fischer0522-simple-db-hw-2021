@@ -273,6 +273,7 @@ public class TestUtil {
             cur = low;
         }
 
+        @Override
         public void close() {
         }
 
@@ -280,6 +281,7 @@ public class TestUtil {
             cur = low;
         }
 
+        @Override
         public TupleDesc getTupleDesc() {
             return Utility.getTupleDesc(width);
         }
@@ -299,7 +301,8 @@ public class TestUtil {
             return cur < high;
         }
 
-		public Tuple next() throws NoSuchElementException {
+		@Override
+        public Tuple next() throws NoSuchElementException {
 			if(cur >= high) throw new NoSuchElementException();
             Tuple tup = new Tuple(getTupleDesc());
             for (int i = 0; i < width; ++i)

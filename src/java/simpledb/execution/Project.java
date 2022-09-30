@@ -44,6 +44,7 @@ public class Project extends Operator {
         td = new TupleDesc(types, fieldAr);
     }
 
+    @Override
     public TupleDesc getTupleDesc() {
         return td;
     }

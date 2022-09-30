@@ -128,6 +128,7 @@ public class BTreeScan implements OpIterator {
 	 * @return the TupleDesc with field names from the underlying BTreeFile,
 	 *         prefixed with the tableAlias string from the constructor.
 	 */
+	@Override
 	public TupleDesc getTupleDesc() {
 		return myTd;
 	}
@@ -139,7 +140,8 @@ public class BTreeScan implements OpIterator {
 		return it.hasNext();
 	}
 
-	public Tuple next() throws NoSuchElementException,
+	@Override
+    public Tuple next() throws NoSuchElementException,
 	TransactionAbortedException, DbException {
 		if (!isOpen)
 			throw new IllegalStateException("iterator is closed");
@@ -147,6 +149,7 @@ public class BTreeScan implements OpIterator {
 		return it.next();
 	}
 
+	@Override
 	public void close() {
 		it.close();
 		isOpen = false;

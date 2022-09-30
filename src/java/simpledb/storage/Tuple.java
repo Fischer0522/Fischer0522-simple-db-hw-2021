@@ -80,7 +80,7 @@ public class Tuple implements Serializable {
                 e.printStackTrace();
             }
         }
-        // 判断类型是否匹配
+         // 判断类型是否匹配
         TupleDesc.TDItem tdItem = tupleDesc.getTdItems().get(i);
         if (!f.getType().equals(tdItem.fieldType) )
         {

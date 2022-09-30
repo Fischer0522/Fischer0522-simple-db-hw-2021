@@ -41,6 +41,7 @@ public class HashEquiJoin extends Operator {
         return pred;
     }
 
+    @Override
     public TupleDesc getTupleDesc() {
         return comboTD;
     }
