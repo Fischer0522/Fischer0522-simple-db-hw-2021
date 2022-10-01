@@ -54,7 +54,6 @@ public class Aggregate extends Operator {
         TupleDesc tupleDesc = new TupleDesc(types,names);
         this.tupleDesc = tupleDesc;
 
-
         if (aFieldType == Type.INT_TYPE) {
             aggregator = new IntegerAggregator(gfield,gFieldType,afield,aop);
         } else {
@@ -203,7 +202,6 @@ public class Aggregate extends Operator {
         } else {
             this.aggregator = new StringAggregator(gfield,gFieldType,afield,aop);
         }
-
 
     }
 

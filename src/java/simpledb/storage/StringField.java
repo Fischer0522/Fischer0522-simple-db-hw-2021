@@ -69,8 +69,9 @@ public class StringField implements Field {
 		}
 		dos.writeInt(s.length());
 		dos.writeBytes(s);
-		while (overflow-- > 0)
+		while (overflow-- > 0) {
 			dos.write((byte) 0);
+		}
 	}
 
 	/**

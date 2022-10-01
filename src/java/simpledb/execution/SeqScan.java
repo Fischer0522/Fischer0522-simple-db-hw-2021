@@ -94,7 +94,6 @@ public class SeqScan implements OpIterator {
         it = Database.getCatalog().getDatabaseFile(tableId).iterator(tid);
         it.open();
         // some code goes here
-
     }
 
     /**

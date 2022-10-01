@@ -102,8 +102,9 @@ public class HeapFileEncoder {
     //  per record, we need one bit; there are nrecords per page, so we need
     // nrecords bits, i.e., ((nrecords/32)+1) integers.
     int nheaderbytes = (nrecords / 8);
-    if (nheaderbytes * 8 < nrecords)
+    if (nheaderbytes * 8 < nrecords) {
         nheaderbytes++;  //ceiling
+    }
     int nheaderbits = nheaderbytes * 8;
 
     BufferedReader br = new BufferedReader(new FileReader(inFile));
@@ -132,12 +133,14 @@ public class HeapFileEncoder {
             continue;
 
         if (c == '\n') {
-            if (first)
+            if (first) {
                 continue;
+            }
             recordcount++;
             first = true;
-        } else
+        } else {
             first = false;
+        }
         if (c == fieldSeparator || c == '\n' || c == '\r') {
             String s = new String(buf, 0, curpos);
             if (typeAr[fieldNo] == Type.INT_TYPE) {
@@ -155,14 +158,16 @@ public class HeapFileEncoder {
                 }
                 pageStream.writeInt(s.length());
                 pageStream.writeBytes(s);
-                while (overflow-- > 0)
+                while (overflow-- > 0) {
                     pageStream.write((byte)0);
+                }
             }
             curpos = 0;
-            if (c == '\n')
+            if (c == '\n') {
                 fieldNo = 0;
-            else
+            } else {
                 fieldNo++;
+            }
             
         } else if (c == -1) {
             done = true;

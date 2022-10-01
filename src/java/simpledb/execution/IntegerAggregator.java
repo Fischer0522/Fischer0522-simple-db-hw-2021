@@ -215,7 +215,6 @@ public class IntegerAggregator implements Aggregator {
             sumMap = new HashMap<>();
             countMap = new HashMap<>();
         }
-
        @Override
        void handle(Tuple tuple) {
            // 先判断是否为空
