@@ -46,9 +46,12 @@ public class StringAggregator implements Aggregator {
      */
     @Override
     public void mergeTupleIntoGroup(Tuple tup) {
-        Field fieldToGroupBy = tup.getField(gbfield);
+        // 先判断是否为空
+        Field fieldToGroupBy;
         if (this.gbfield == NO_GROUPING) {
             fieldToGroupBy =null;
+        } else {
+            fieldToGroupBy  = tup.getField(gbfield);
         }
         Integer orDefault = group.getOrDefault(fieldToGroupBy, 0);
         orDefault++;

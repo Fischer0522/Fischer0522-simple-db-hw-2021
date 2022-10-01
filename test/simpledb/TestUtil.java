@@ -277,6 +277,7 @@ public class TestUtil {
         public void close() {
         }
 
+        @Override
         public void rewind() {
             cur = low;
         }

@@ -155,7 +155,8 @@ public class BTreeScan implements OpIterator {
 		isOpen = false;
 	}
 
-	public void rewind() throws DbException, NoSuchElementException,
+	@Override
+    public void rewind() throws DbException, NoSuchElementException,
 	TransactionAbortedException {
 		close();
 		open();

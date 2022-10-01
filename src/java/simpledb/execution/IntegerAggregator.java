@@ -218,10 +218,14 @@ public class IntegerAggregator implements Aggregator {
 
        @Override
        void handle(Tuple tuple) {
-           Field groupByField = tuple.getField(gbfield);
+           // 先判断是否为空
+           Field groupByField;
            if (gbfield == NO_GROUPING) {
                groupByField = null;
+           } else {
+               groupByField = tuple.getField(gbfield);
            }
+
            IntField intField = (IntField) tuple.getField(afield);
            int value = intField.getValue();
            Integer orDefault = sumMap.getOrDefault(groupByField, 0);

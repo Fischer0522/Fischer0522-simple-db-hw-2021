@@ -56,7 +56,7 @@ public class HeapPage implements Page {
         for (int i=0; i<header.length; i++) {
             header[i] = dis.readByte();
         }
-        
+
         tuples = new Tuple[numSlots];
         try{
             // allocate and read the actual records of this page
@@ -72,9 +72,9 @@ public class HeapPage implements Page {
     }
 
     /** Retrieve the number of tuples on this page.
-        @return the number of tuples on this page
-    */
-    private int getNumTuples() {        
+     @return the number of tuples on this page
+     */
+    private int getNumTuples() {
         // some code goes here
         // 1 bit 代表的是header的长度，每个slot有一个对应的header位
         double floor = Math.floor((double) BufferPool.getPageSize() * 8 / ((this.td.getSize() * 8 + 1)));
@@ -93,11 +93,11 @@ public class HeapPage implements Page {
         double ceil = Math.ceil((double) getNumTuples() / 8);
         // some code goes here
         return (int) ceil;
-                 
+
     }
-    
+
     /** Return a view of this page before it was modified
-        -- used by recovery */
+     -- used by recovery */
     @Override
     public HeapPage getBeforeImage(){
         try {
@@ -114,12 +114,12 @@ public class HeapPage implements Page {
         }
         return null;
     }
-    
+
     @Override
     public void setBeforeImage() {
         synchronized(oldDataLock)
         {
-        oldData = getPageData().clone();
+            oldData = getPageData().clone();
         }
     }
 
@@ -128,7 +128,7 @@ public class HeapPage implements Page {
      */
     @Override
     public HeapPageId getId() {
-    // some code goes here
+        // some code goes here
         return this.pid;
 
     }
@@ -215,7 +215,7 @@ public class HeapPage implements Page {
                 Field f = tuples[i].getField(j);
                 try {
                     f.serialize(dos);
-                
+
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -285,7 +285,7 @@ public class HeapPage implements Page {
     @Override
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
-	// not necessary for lab1
+        // not necessary for lab1
     }
 
     /**
@@ -294,8 +294,8 @@ public class HeapPage implements Page {
     @Override
     public TransactionId isDirty() {
         // some code goes here
-	// Not necessary for lab1
-        return null;      
+        // Not necessary for lab1
+        return null;
     }
 
     /**
@@ -305,7 +305,7 @@ public class HeapPage implements Page {
         // some code goes here
         int numUsedSlot = 0;
         for(byte b :header) {
-           // System.out.println(b);
+            // System.out.println(b);
             // 统计出该bit中有多少个1，即多少个slot被使用
             while (b != 0) {
                 numUsedSlot ++;
@@ -362,11 +362,11 @@ public class HeapPage implements Page {
                 if (!hasNext()) {
                     throw new NoSuchElementException();
                 }
-                    while (!isSlotUsed(nextSlot)) {
-                        // 获取被使用的slot
-                        nextSlot++;
-                    }
-                    return tuples[nextSlot++];
+                while (!isSlotUsed(nextSlot)) {
+                    // 获取被使用的slot
+                    nextSlot++;
+                }
+                return tuples[nextSlot++];
             }
         };
     }

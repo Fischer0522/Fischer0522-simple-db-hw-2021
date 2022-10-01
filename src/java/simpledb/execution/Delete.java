@@ -49,6 +49,7 @@ public class Delete extends Operator {
         // some code goes here
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
         // some code goes here
     }

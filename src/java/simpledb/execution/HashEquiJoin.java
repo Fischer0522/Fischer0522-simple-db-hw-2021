@@ -93,6 +93,7 @@ public class HashEquiJoin extends Operator {
         this.map.clear();
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
         child1.rewind();
         child2.rewind();

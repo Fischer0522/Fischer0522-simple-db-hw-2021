@@ -62,6 +62,7 @@ public class Project extends Operator {
         child.close();
     }
 
+    @Override
     public void rewind() throws DbException, TransactionAbortedException {
         child.rewind();
     }

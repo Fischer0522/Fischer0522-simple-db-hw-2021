@@ -78,6 +78,7 @@ public class OrderBy extends Operator {
         it = null;
     }
 
+    @Override
     public void rewind() {
         it = childTups.iterator();
     }

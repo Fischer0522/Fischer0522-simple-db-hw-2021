@@ -728,6 +728,7 @@ class TupleArrayIterator implements OpIterator {
      * Resets the iterator to the start.
      *
      */
+    @Override
     public void rewind() {
         it = tups.iterator();
     }

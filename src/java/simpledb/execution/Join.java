@@ -22,7 +22,7 @@ public class Join extends Operator {
     /**
      * Constructor. Accepts two children to join and the predicate to join them
      * on
-     * 
+     *
      * @param p
      *            The predicate to use to join the children
      * @param child1
@@ -117,59 +117,52 @@ public class Join extends Operator {
      * <p>
      * For example, if one tuple is {1,2,3} and the other tuple is {1,5,6},
      * joined on equality of the first column, then this returns {1,2,3,1,5,6}.
-     * 
+     *
      * @return The next matching tuple.
      * @see JoinPredicate#filter
      */
     @Override
     protected Tuple fetchNext() throws TransactionAbortedException, DbException {
 
-
-        // some code goes here
-        // Join操作重点为生成笛卡尔积
-        // t用于保存上一次 child1的tuple
-        while (child1.hasNext() || t != null) {
-            if(child1.hasNext() && t == null){
-                t = child1.next();
+        while (this.child1.hasNext() || t != null){
+            if(this.child1.hasNext() && t == null){
+                t = this.child1.next();
             }
-
-            while (child2.hasNext()) {
-                Tuple tuple2 = child2.next();
-                boolean filter = p.filter(t, tuple2);
-                if (filter) {
-                    TupleDesc tupleDesc1 = t.getTupleDesc();
-                    TupleDesc tupleDesc2 = tuple2.getTupleDesc();
-                    TupleDesc merge = TupleDesc.merge(tupleDesc1, tupleDesc2);
-                    Tuple newTuple = new Tuple(merge);
+            while(child2.hasNext()){
+                Tuple t2 = child2.next();
+                if(p.filter(t, t2)){
+                    TupleDesc td1 = t.getTupleDesc();
+                    TupleDesc td2 = t2.getTupleDesc();
+                    // 合并
+                    TupleDesc tupleDesc = TupleDesc.merge(td1, td2);
+                    // 创建新的行
+                    Tuple newTuple = new Tuple(tupleDesc);
+                    // 设置路径
                     newTuple.setRecordId(t.getRecordId());
-                    int i= 0;
-                    Iterator<Field> f1 = t.fields();
-                    while (f1.hasNext()) {
+                    // 合并
+                    int i = 0;
+                    for (; i < td1.numFields(); i++) {
 
-                        Field next = f1.next();
-                        newTuple.setField(i++,next);
+                        newTuple.setField(i, t.getField(i));
+                    }
+                    for (int j = 0; j < td2.numFields(); j++) {
 
+                        newTuple.setField(i + j, t2.getField(j));
                     }
-                    Iterator<Field> f2 = tuple2.fields();
-                    while (f2.hasNext()) {
-                        Field next = f2.next();
-                        newTuple.setField(i++,next);
-                    }
+                    // 遍历完t2后重置，t置空，准备遍历下一个
                     if(!child2.hasNext()){
                         child2.rewind();
                         t = null;
                     }
-
                     return newTuple;
-
                 }
             }
-            // t指向 child1的下一个tuple child2从第一个开始
+            // 重置 child2
             child2.rewind();
             t = null;
-
         }
         return null;
+
 
     }
 

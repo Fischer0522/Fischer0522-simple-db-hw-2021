@@ -55,7 +55,7 @@ public class SeqScan implements OpIterator {
      * */
     public String getTableName() {
 
-         return Database.getCatalog().getTableName(this.tableId);
+        return Database.getCatalog().getTableName(this.tableId);
     }
 
     /**
