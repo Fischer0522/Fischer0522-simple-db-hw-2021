@@ -83,6 +83,7 @@ public class SystemTestUtil {
             tuples.add(tuple);
         }
 
+
         // Convert the tuples list to a heap file and open it
         File temp = File.createTempFile("table", ".dat");
         temp.deleteOnExit();
