@@ -24,6 +24,7 @@ public class HeapPage implements Page {
     final byte[] header;
     final Tuple[] tuples;
     final int numSlots;
+    private TransactionId drity;
 
     byte[] oldData;
     private final Byte oldDataLock= (byte) 0;
@@ -263,6 +264,18 @@ public class HeapPage implements Page {
      */
     public void deleteTuple(Tuple t) throws DbException {
         // some code goes here
+        RecordId recordId = t.getRecordId();
+        for (int i = 0; i < tuples.length; i++) {
+            if (t.equals(tuples[i])) {
+                tuples[i] = null;
+                if (!isSlotUsed(i)) {
+                    throw new DbException("tuple is already empty");
+                }
+                markSlotUsed(i,false);
+                return;
+            }
+        }
+        throw new DbException("this page is already empty");
         // not necessary for lab1
     }
 
@@ -276,6 +289,21 @@ public class HeapPage implements Page {
     public void insertTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
+        for (int i = 0; i < tuples.length;i++) {
+            if(tuples[i] == null) {
+                if (isSlotUsed(i)) {
+                    throw new DbException("this tuple is already in use");
+                }
+                // recordId 由page和在page中的位置决定，因此新插入需要设置recordId
+                RecordId recordId = new RecordId(this.pid,i);
+                t.setRecordId(recordId);
+                tuples[i] = t;
+                markSlotUsed(i,true);
+                return;
+            }
+        }
+        throw new DbException("this page is already full");
+
     }
 
     /**
@@ -286,6 +314,11 @@ public class HeapPage implements Page {
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
         // not necessary for lab1
+        if (dirty == true) {
+            this.drity = tid;
+        } else {
+            this.drity = null;
+        }
     }
 
     /**
@@ -295,7 +328,7 @@ public class HeapPage implements Page {
     public TransactionId isDirty() {
         // some code goes here
         // Not necessary for lab1
-        return null;
+        return this.drity;
     }
 
     /**
@@ -336,6 +369,14 @@ public class HeapPage implements Page {
      * Abstraction to fill or clear a slot on this page.
      */
     private void markSlotUsed(int i, boolean value) {
+        int index = i /8;
+        int offset = i % 8;
+        if (value == false) {
+
+            this.header[index] -= (1 << offset);
+        } else {
+            this.header[index] += (1 << offset);
+        }
         // some code goes here
         // not necessary for lab1
     }
