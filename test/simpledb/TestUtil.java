@@ -242,7 +242,8 @@ public class TestUtil {
             throw new RuntimeException("not implemented");
         }
 
-		public TupleDesc getTupleDesc() {			
+		@Override
+        public TupleDesc getTupleDesc() {
 			return td;
 		}
     }

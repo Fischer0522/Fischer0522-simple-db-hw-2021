@@ -74,7 +74,8 @@ public class BTreeFile implements DbFile {
 	 * 
 	 * @return TupleDesc of this DbFile.
 	 */
-	public TupleDesc getTupleDesc() {
+	@Override
+    public TupleDesc getTupleDesc() {
 		return td;
 	}
 

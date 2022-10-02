@@ -264,18 +264,21 @@ public class HeapPage implements Page {
      */
     public void deleteTuple(Tuple t) throws DbException {
         // some code goes here
-        RecordId recordId = t.getRecordId();
-        for (int i = 0; i < tuples.length; i++) {
-            if (t.equals(tuples[i])) {
-                tuples[i] = null;
-                if (!isSlotUsed(i)) {
-                    throw new DbException("tuple is already empty");
-                }
-                markSlotUsed(i,false);
-                return;
-            }
+
+        int tupleId = t.getRecordId().getTupleNumber();
+        if (tuples[tupleId] == null || !t.getTupleDesc().equals(td) ||!t.getRecordId().getPageId().equals(pid)) {
+            throw new DbException("this tuple is not in this page");
         }
-        throw new DbException("this page is already empty");
+        if (!isSlotUsed(tupleId)) {
+            throw new DbException("this tuple is already empty");
+        }
+
+        markSlotUsed(tupleId,false);
+
+        tuples[tupleId] = null;
+
+
+
         // not necessary for lab1
     }
 
@@ -314,7 +317,7 @@ public class HeapPage implements Page {
     public void markDirty(boolean dirty, TransactionId tid) {
         // some code goes here
         // not necessary for lab1
-        if (dirty == true) {
+        if (dirty) {
             this.drity = tid;
         } else {
             this.drity = null;
@@ -371,7 +374,7 @@ public class HeapPage implements Page {
     private void markSlotUsed(int i, boolean value) {
         int index = i /8;
         int offset = i % 8;
-        if (value == false) {
+        if (!value) {
 
             this.header[index] -= (1 << offset);
         } else {
