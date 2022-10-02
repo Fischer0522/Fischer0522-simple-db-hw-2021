@@ -118,14 +118,17 @@ public class HeapFile implements DbFile {
     // see DbFile.java for javadocs
     @Override
     public void writePage(Page page) throws IOException {
-        int offset = page.getId().getPageNumber();
-        if (offset > numPages()) {
-            throw  new IllegalArgumentException();
+        HeapPageId pageId = (HeapPageId) page.getId();
+        int pageNumber = pageId.getPageNumber();
+        if (pageNumber > numPages()) {
+            throw new IllegalArgumentException("this file is full");
         }
-        RandomAccessFile f = new RandomAccessFile(file,"rw");
-        f.seek(offset * BufferPool.getPageSize());
-        f.write(page.getPageData());
-        f.close();
+        int offset = BufferPool.getPageSize() * pageNumber;
+        RandomAccessFile r = new RandomAccessFile(file,"rw");
+        r.seek(offset);
+        r.write(page.getPageData());
+        r.close();
+
 
 
         // some code goes here
@@ -148,27 +151,31 @@ public class HeapFile implements DbFile {
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
         List<Page> pages = new ArrayList<>();
-        for (int i = 0; i < numPages();i++) {
-            HeapPageId pageId = new HeapPageId(this.getId(),i);
-            HeapPage page =(HeapPage) Database.getBufferPool().getPage(tid, pageId, Permissions.READ_ONLY);
+        // 先判断当前是否由已经存在的页是否由剩余空间
+        for(int i = 0; i <numPages();i++) {
+            HeapPageId heapPageId = new HeapPageId(this.getId(),i);
+            HeapPage page = (HeapPage)Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
             if (page.getNumEmptySlots() != 0) {
-
                 page.insertTuple(t);
                 pages.add(page);
                 return pages;
             }
-        }
 
+        }
+        // 若当前页全部满，先创建一个新的空白page,再通过bufferPool将该空白page读出来
         BufferedOutputStream output = new BufferedOutputStream(new FileOutputStream(file,true));
         byte[] emptyPageData = HeapPage.createEmptyPageData();
         output.write(emptyPageData);
         output.close();
-        HeapPageId heapPageId = new HeapPageId(this.getId(),numPages()-1);
-        // 获取之前已经写入到文件当中的空page
-        HeapPage page = (HeapPage) Database.getBufferPool().getPage(tid, heapPageId, Permissions.READ_WRITE);
+        // 物理上已经创建了一个新的page，因此numPages获取到的数量也+1，因此需要-1来得到最后一页
+        HeapPageId pageId = new HeapPageId(this.getId(),numPages() -1);
+        HeapPage page =(HeapPage) Database.getBufferPool().getPage(tid, pageId, Permissions.READ_WRITE);
         page.insertTuple(t);
         pages.add(page);
         return pages;
+
+
+
         // not necessary for Exercise1
     }
 
@@ -178,12 +185,15 @@ public class HeapFile implements DbFile {
             TransactionAbortedException {
         ArrayList<Page> pages = new ArrayList<>();
         PageId pageId = t.getRecordId().getPageId();
-        HeapPage page = (HeapPage)Database.getBufferPool().getPage(tid, pageId, Permissions.READ_WRITE);
+        // 找到该tuple所属于的页
+        if (!(getId() == pageId.getTableId())) {
+                throw new DbException("this page does not belong to this file");
+        }
+        HeapPage page =(HeapPage) Database.getBufferPool().getPage(tid, pageId, Permissions.READ_WRITE);
         page.deleteTuple(t);
         pages.add(page);
-
-        // some code goes here
         return pages;
+        // some code goes here
         // not necessary for Exercise1
     }
 

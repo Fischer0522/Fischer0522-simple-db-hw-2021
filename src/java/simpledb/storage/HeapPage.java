@@ -263,20 +263,19 @@ public class HeapPage implements Page {
      * @param t The tuple to delete
      */
     public void deleteTuple(Tuple t) throws DbException {
+
         // some code goes here
+        int tupleNumber = t.getRecordId().getTupleNumber();
+        if (!t.getRecordId().getPageId().equals(this.pid)) {
+            throw new DbException("this tuple doesn't belong to this page");
 
-        int tupleId = t.getRecordId().getTupleNumber();
-        if (tuples[tupleId] == null || !t.getTupleDesc().equals(td) ||!t.getRecordId().getPageId().equals(pid)) {
-            throw new DbException("this tuple is not in this page");
         }
-        if (!isSlotUsed(tupleId)) {
-            throw new DbException("this tuple is already empty");
+        if (!isSlotUsed(tupleNumber)) {
+
+            throw new DbException("this slot is already empty");
         }
-
-        markSlotUsed(tupleId,false);
-
-        tuples[tupleId] = null;
-
+        tuples[tupleNumber] = null;
+        markSlotUsed(tupleNumber,false);
 
 
         // not necessary for lab1
@@ -292,12 +291,11 @@ public class HeapPage implements Page {
     public void insertTuple(Tuple t) throws DbException {
         // some code goes here
         // not necessary for lab1
-        for (int i = 0; i < tuples.length;i++) {
-            if(tuples[i] == null) {
+        for (int i = 0; i <tuples.length ;i++) {
+            if (tuples[i] == null) {
                 if (isSlotUsed(i)) {
                     throw new DbException("this tuple is already in use");
                 }
-                // recordId 由page和在page中的位置决定，因此新插入需要设置recordId
                 RecordId recordId = new RecordId(this.pid,i);
                 t.setRecordId(recordId);
                 tuples[i] = t;

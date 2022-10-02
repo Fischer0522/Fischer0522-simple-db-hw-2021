@@ -161,10 +161,9 @@ public class BufferPool {
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
-        List<Page> pages = databaseFile.insertTuple(tid, t);
+        HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
+        List<Page> pages = heapFile.insertTuple(tid, t);
         updateBufferPool(pages,tid);
-
         // not necessary for Exercise1
     }
 
@@ -183,22 +182,25 @@ public class BufferPool {
      */
     public  void deleteTuple(TransactionId tid, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
-        HeapFile databaseFile = (HeapFile) Database.getCatalog().getDatabaseFile(t.getRecordId().getPageId().getTableId());
-        ArrayList<Page> pages = databaseFile.deleteTuple(tid, t);
+        PageId pageId = t.getRecordId().getPageId();
+        int tableId = pageId.getTableId();
+        HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
+        ArrayList<Page> pages = heapFile.deleteTuple(tid, t);
         updateBufferPool(pages,tid);
+
         // some code goes here
         // not necessary for Exercise1
     }
 
-    public void updateBufferPool(List<Page> pages,TransactionId tid) throws DbException{
-        for (Page page : pages) {
-            // 后续改为内存淘汰策略
+    public void updateBufferPool(List<Page> pages,TransactionId tid) {
+        for(Page page : pages) {
             page.markDirty(true,tid);
             int pageKey = page.getId().hashCode();
             pageStore.put(pageKey,page);
-
         }
     }
+
+
 
     /**
      * Flush all dirty pages to disk.
