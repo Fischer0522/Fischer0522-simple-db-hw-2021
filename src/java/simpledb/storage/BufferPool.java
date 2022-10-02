@@ -10,6 +10,7 @@ import simpledb.transaction.TransactionId;
 import java.io.*;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -39,6 +40,36 @@ public class BufferPool {
     private final int numPages;
     // 储存的页面
     private final ConcurrentHashMap<Integer, Page> pageStore;
+    private final List<Node> lruList;
+    private class Node {
+        private PageId pageId;
+        private Page page;
+
+        public Node() {
+
+        }
+
+        public Node(PageId pageId, Page page) {
+            this.pageId = pageId;
+            this.page = page;
+        }
+
+        public PageId getPageId() {
+            return pageId;
+        }
+
+        public void setPageId(PageId pageId) {
+            this.pageId = pageId;
+        }
+
+        public Page getPage() {
+            return page;
+        }
+
+        public void setPage(Page page) {
+            this.page = page;
+        }
+    }
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -48,7 +79,9 @@ public class BufferPool {
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
-        pageStore = new ConcurrentHashMap<>();
+        this.pageStore = new ConcurrentHashMap<>();
+        this.lruList = new LinkedList<>();
+
     }
 
     public static int getPageSize() {
@@ -91,10 +124,12 @@ public class BufferPool {
             // 是否超过大小
             if(pageStore.size() >= numPages){
                 // 淘汰 (后面的 Exercise 书写)
-                throw new DbException("页面已满");
+                evictPage();
             }
             // 放入缓存
             pageStore.put(pid.hashCode(), page);
+            Node newNode = new Node(page.getId(),page);
+            lruList.add(newNode);
         }
         // 从 缓存池 中获取
         return pageStore.get(pid.hashCode());
@@ -195,6 +230,14 @@ public class BufferPool {
     public void updateBufferPool(List<Page> pages,TransactionId tid) {
         for(Page page : pages) {
             page.markDirty(true,tid);
+
+            if (pageStore.size() >= numPages) {
+                try {
+                    evictPage();
+                } catch (DbException e) {
+                    e.printStackTrace();
+                }
+            }
             int pageKey = page.getId().hashCode();
             pageStore.put(pageKey,page);
         }
@@ -209,6 +252,11 @@ public class BufferPool {
      */
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
+        ConcurrentHashMap.KeySetView<Integer, Page> integers = pageStore.keySet();
+        for(Integer integer : integers) {
+            Page page = pageStore.get(integer);
+            flushPage(page.getId());
+        }
         // not necessary for Exercise1
 
     }
@@ -223,6 +271,9 @@ public class BufferPool {
      */
     public synchronized void discardPage(PageId pid) {
         // some code goes here
+        int pageKey = pid.hashCode();
+
+        pageStore.remove(pageKey);
         // not necessary for Exercise1
     }
 
@@ -232,6 +283,12 @@ public class BufferPool {
      */
     private synchronized  void flushPage(PageId pid) throws IOException {
         // some code goes here
+        int tableId = pid.getTableId();
+        DbFile heapFile =  Database.getCatalog().getDatabaseFile(tableId);
+        int pageKey = pid.hashCode();
+        Page page = pageStore.get(pageKey);
+
+        heapFile.writePage(page);
         // not necessary for Exercise1
     }
 
@@ -249,5 +306,13 @@ public class BufferPool {
     private synchronized  void evictPage() throws DbException {
         // some code goes here
         // not necessary for Exercise1
+        Node remove = lruList.remove(0);
+        int pageKey = remove.getPageId().hashCode();
+        try {
+            flushPage(remove.pageId);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        pageStore.remove(pageKey);
     }
 }
