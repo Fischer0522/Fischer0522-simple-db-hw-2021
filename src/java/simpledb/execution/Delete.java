@@ -86,7 +86,6 @@ public class Delete extends Operator {
 
         // some code goes here
         if (!isDeleted) {
-
             List<Tuple>  tuples = new ArrayList<>();
             while (child.hasNext()) {
                 Tuple next = child.next();

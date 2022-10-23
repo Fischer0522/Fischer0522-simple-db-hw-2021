@@ -109,6 +109,7 @@ the basic operation is as follows:
     <tt>LogicalPlan</tt> instance it has constructed.  The <tt>physicalPlan</tt> method returns a
     <tt>DBIterator</tt> object that can be used to actually run the query.
     
+
 In the exercises to come, you will implement the methods that help
 <tt>physicalPlan</tt> devise an optimal plan.
 
@@ -302,7 +303,7 @@ While implementing your simple solution, you  should keep in mind the following:
 
 <!--  
   * <a name="change">The following three paragraphs are different in this version of the lab. </a> *
-  .-->
+    .-->
 *  For equality joins, when one of the attributes is a primary key, the number of tuples produced by the join cannot
    be larger than the cardinality of the non-primary key attribute.
 * For equality joins when there is no primary key, it's hard to say much about what the size of the output
@@ -572,4 +573,4 @@ score given will be your grade for the autograded portion of the assignment. An 
 based on the quality of your writeup and our subjective evaluation of your code. This part will also be published on
 gradescope after we finish grading your assignment.
 
-We had a lot of fun designing this assignment, and we hope you enjoy hacking on it!
+We had a lot of fun designing this assignment, and we hope you enjoy hacking on it!   

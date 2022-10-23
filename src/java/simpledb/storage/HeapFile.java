@@ -128,9 +128,6 @@ public class HeapFile implements DbFile {
         r.seek(offset);
         r.write(page.getPageData());
         r.close();
-
-
-
         // some code goes here
         // not necessary for Exercise1
     }
@@ -173,9 +170,6 @@ public class HeapFile implements DbFile {
         page.insertTuple(t);
         pages.add(page);
         return pages;
-
-
-
         // not necessary for Exercise1
     }
 

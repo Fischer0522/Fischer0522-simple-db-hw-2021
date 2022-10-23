@@ -268,7 +268,6 @@ public class HeapPage implements Page {
         int tupleNumber = t.getRecordId().getTupleNumber();
         if (!t.getRecordId().getPageId().equals(this.pid)) {
             throw new DbException("this tuple doesn't belong to this page");
-
         }
         if (!isSlotUsed(tupleNumber)) {
 
@@ -276,7 +275,6 @@ public class HeapPage implements Page {
         }
         tuples[tupleNumber] = null;
         markSlotUsed(tupleNumber,false);
-
 
         // not necessary for lab1
     }
