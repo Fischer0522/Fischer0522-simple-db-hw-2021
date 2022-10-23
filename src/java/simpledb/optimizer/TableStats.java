@@ -145,6 +145,7 @@ public class TableStats {
                 stringHistogramMap.put(i,stringHistogram);
             }
         }
+        addValueToHist();
 
 
         // For this function, you'll have to get the
@@ -205,8 +206,9 @@ public class TableStats {
      */
     public double estimateScanCost() {
         // some code goes here
+        return this.ioCostPerPage * this.pageNum;
 
-        return 0;
+
     }
 
     /**
@@ -219,8 +221,8 @@ public class TableStats {
      *         selectivityFactor
      */
     public int estimateTableCardinality(double selectivityFactor) {
-        // some code goes here
-        return 0;
+        double cardinality = selectivityFactor * tupleNum;
+        return (int) cardinality ;
     }
 
     /**
@@ -235,7 +237,12 @@ public class TableStats {
      * */
     public double avgSelectivity(int field, Predicate.Op op) {
         // some code goes here
-        return 1.0;
+        if(tupleDesc.getFieldType(field) == Type.INT_TYPE) {
+            return intHistogramMap.get(field).avgSelectivity();
+        } else {
+            return stringHistogramMap.get(field).avgSelectivity();
+        }
+
     }
 
     /**
@@ -253,7 +260,15 @@ public class TableStats {
      */
     public double estimateSelectivity(int field, Predicate.Op op, Field constant) {
         // some code goes here
-        return 1.0;
+        Type type = constant.getType();
+        if (type == Type.INT_TYPE) {
+            IntField intField = (IntField) constant;
+            return intHistogramMap.get(field).estimateSelectivity(op,intField.getValue());
+        } else {
+            StringField stringField = (StringField) constant;
+            return stringHistogramMap.get(field).estimateSelectivity(op,stringField.getValue());
+        }
+
     }
 
     /**
@@ -261,7 +276,7 @@ public class TableStats {
      * */
     public int totalTuples() {
         // some code goes here
-        return 0;
+        return this.tupleNum;
     }
 
 }
