@@ -5,7 +5,7 @@ import simpledb.common.Type;
 import simpledb.execution.Predicate;
 import simpledb.execution.SeqScan;
 import simpledb.storage.*;
-import simpledb.transaction.Transaction;
+import simpledb.transaction.TransactionId;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -23,7 +23,7 @@ public class TableStats {
 
     private static final ConcurrentMap<String, TableStats> statsMap = new ConcurrentHashMap<>();
 
-    static final int IOCOSTPERPAGE = 1000;
+    static final int IO_COST_PER_PAGE = 1000;
 
     public static TableStats getTableStats(String tablename) {
         return statsMap.get(tablename);
@@ -55,7 +55,7 @@ public class TableStats {
         System.out.println("Computing table stats.");
         while (tableIt.hasNext()) {
             int tableid = tableIt.next();
-            TableStats s = new TableStats(tableid, IOCOSTPERPAGE);
+            TableStats s = new TableStats(tableid, IO_COST_PER_PAGE);
             setTableStats(Database.getCatalog().getTableName(tableid), s);
         }
         System.out.println("Done.");
@@ -67,6 +67,15 @@ public class TableStats {
      * histograms.
      */
     static final int NUM_HIST_BINS = 100;
+    private DbFile dbFile;
+    private int ioCostPerPage;
+    private TupleDesc tupleDesc;
+    private int tableId;
+    private int pageNum;
+    private int tupleNum;
+    private int fieldNum;
+    Map<Integer,IntHistogram> intHistogramMap;
+    Map<Integer,StringHistogram> stringHistogramMap;
 
     /**
      * Create a new TableStats object, that keeps track of statistics on each
@@ -79,6 +88,65 @@ public class TableStats {
      *            sequential-scan IO and disk seeks.
      */
     public TableStats(int tableid, int ioCostPerPage) {
+        this.tableId = tableid;
+        this.ioCostPerPage = ioCostPerPage;
+        this.dbFile = Database.getCatalog().getDatabaseFile(tableid);
+        TupleDesc tupleDesc = dbFile.getTupleDesc();
+        this.fieldNum = tupleDesc.numFields();
+        this.pageNum = ((HeapFile) dbFile).numPages();
+        this.tupleNum = 0;
+        intHistogramMap = new HashMap<>();
+        stringHistogramMap = new HashMap<>();
+
+        Type[] types = getType(tupleDesc);
+        int[] maxs = new int[fieldNum];
+        int[] mins = new int[fieldNum];
+
+
+        TransactionId transactionId = new TransactionId();
+        SeqScan seqScan = new SeqScan(transactionId,tableId);
+        try {
+            seqScan.open();
+
+                for (int i = 0; i < fieldNum;i++) {
+                    if (types[i] == Type.STRING_TYPE) {
+                        continue;
+                    }
+                    int max = Integer.MIN_VALUE;
+                    int min = Integer.MAX_VALUE;
+                    while (seqScan.hasNext()) {
+                        if (i == 0) {
+                            tupleNum++;
+                        }
+                        Tuple next = seqScan.next();
+                        IntField field = (IntField)next.getField(i);
+                        int value = field.getValue();
+                        max = Math.max(value,max);
+                        min = Math.min(value,min);
+
+                    }
+                    seqScan.rewind();
+                    maxs[i] = max;
+                    mins[i] = min;
+                }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            seqScan.close();
+        }
+
+        for (int i = 0; i < fieldNum;i++) {
+            if (types[i] == Type.INT_TYPE) {
+                IntHistogram intHistogram = new IntHistogram(NUM_HIST_BINS,mins[i],maxs[i]);
+                intHistogramMap.put(i,intHistogram);
+            } else if(types[i] == Type.STRING_TYPE) {
+                StringHistogram stringHistogram = new StringHistogram(NUM_HIST_BINS);
+                stringHistogramMap.put(i,stringHistogram);
+            }
+        }
+
+
         // For this function, you'll have to get the
         // DbFile for the table in question,
         // then scan through its tuples and calculate
@@ -87,6 +155,40 @@ public class TableStats {
         // necessarily have to (for example) do everything
         // in a single scan of the table.
         // some code goes here
+    }
+
+    Type[] getType(TupleDesc tupleDesc) {
+        Type[] types = new Type[this.fieldNum];
+        for (int i = 0;i < this.fieldNum;i++) {
+            Type fieldType = tupleDesc.getFieldType(i);
+            types[i] = fieldType;
+        }
+        return types;
+    }
+    private void addValueToHist(){
+        TransactionId transactionId = new TransactionId();
+        SeqScan seqScan = new SeqScan(transactionId,this.tableId);
+        try {
+            seqScan.open();
+            while (seqScan.hasNext()) {
+                Tuple tuple = seqScan.next();
+                for (int i = 0; i < fieldNum;i++) {
+                    Field field = tuple.getField(i);
+                    Type type = field.getType();
+                    if (type == Type.INT_TYPE) {
+                        int value = ((IntField) field).getValue();
+                        this.intHistogramMap.get(i).addValue(value);
+                    } else {
+                        String value = ((StringField) field).getValue();
+                        this.stringHistogramMap.get(i).addValue(value);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            seqScan.close();
+        }
     }
 
     /**
@@ -103,6 +205,7 @@ public class TableStats {
      */
     public double estimateScanCost() {
         // some code goes here
+
         return 0;
     }
 
