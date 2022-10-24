@@ -373,8 +373,7 @@ Translating the algorithm given in lecture to the join node list form mentioned 
 
 To help you implement this algorithm, we have provided several classes and methods to assist you.  First,
 the method <tt>enumerateSubsets(List<T> v, int size)</tt> in <tt>JoinOptimizer.java</tt> will return
-a set of all of the subsets of <tt>v</tt> of size <tt>size</tt>. This method is VERY inefficient for large
-sets; you can earn extra credit by implementing a more efficient enumerator (hint: consider using an in-place
+a set of all of the subsets of <tt>v</tt> of size <tt>size</tt>. This method is VERY inefficient for large sets; you can earn extra credit by implementing a more efficient enumerator (hint: consider using an in-place
 generation algorithm and a lazy iterator (or stream) interface to avoid materializing the entire power set).
 
 Second, we have provided the method:

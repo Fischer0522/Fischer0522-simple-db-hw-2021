@@ -1,10 +1,12 @@
 package simpledb.optimizer;
 
 import simpledb.common.Database;
+import simpledb.common.DbException;
 import simpledb.common.Type;
 import simpledb.execution.Predicate;
 import simpledb.execution.SeqScan;
 import simpledb.storage.*;
+import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
 import java.util.HashMap;
@@ -91,61 +93,64 @@ public class TableStats {
         this.tableId = tableid;
         this.ioCostPerPage = ioCostPerPage;
         this.dbFile = Database.getCatalog().getDatabaseFile(tableid);
-        TupleDesc tupleDesc = dbFile.getTupleDesc();
-        this.fieldNum = tupleDesc.numFields();
-        this.pageNum = ((HeapFile) dbFile).numPages();
-        this.tupleNum = 0;
+        this.tupleDesc = dbFile.getTupleDesc();
+        HeapFile heapFile = (HeapFile) dbFile;
+        this.pageNum = heapFile.numPages();
         intHistogramMap = new HashMap<>();
         stringHistogramMap = new HashMap<>();
-
-        Type[] types = getType(tupleDesc);
-        int[] maxs = new int[fieldNum];
-        int[] mins = new int[fieldNum];
-
-
+        Type[] type = getType(tupleDesc);
+        this.fieldNum = type.length;
+        this.tupleNum = 0;
         TransactionId transactionId = new TransactionId();
         SeqScan seqScan = new SeqScan(transactionId,tableId);
+        int[] maxs = new int[fieldNum];
+        int[] mins = new int[fieldNum];
         try {
             seqScan.open();
 
-                for (int i = 0; i < fieldNum;i++) {
-                    if (types[i] == Type.STRING_TYPE) {
+            for (int i = 0;i < fieldNum;i++) {
+
+                int max = Integer.MIN_VALUE;
+                int min = Integer.MAX_VALUE;
+                while (seqScan.hasNext()) {
+                    if(i == 0) {
+                        tupleNum++;
+                    }
+                    Tuple tuple = seqScan.next();
+                    Field field = tuple.getField(i);
+                    Type type1 = field.getType();
+                    if (type1 == Type.STRING_TYPE) {
                         continue;
                     }
-                    int max = Integer.MIN_VALUE;
-                    int min = Integer.MAX_VALUE;
-                    while (seqScan.hasNext()) {
-                        if (i == 0) {
-                            tupleNum++;
-                        }
-                        Tuple next = seqScan.next();
-                        IntField field = (IntField)next.getField(i);
-                        int value = field.getValue();
-                        max = Math.max(value,max);
-                        min = Math.min(value,min);
+                    IntField intField = (IntField) field;
+                    int val = intField.getValue();
+                    max = Math.max(max,val);
+                    min = Math.min(min,val);
 
-                    }
-                    seqScan.rewind();
-                    maxs[i] = max;
-                    mins[i] = min;
                 }
-
+                maxs[i] = max;
+                mins[i] = min;
+                seqScan.rewind();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             seqScan.close();
         }
-
         for (int i = 0; i < fieldNum;i++) {
-            if (types[i] == Type.INT_TYPE) {
+            if (type[i] == Type.INT_TYPE) {
                 IntHistogram intHistogram = new IntHistogram(NUM_HIST_BINS,mins[i],maxs[i]);
                 intHistogramMap.put(i,intHistogram);
-            } else if(types[i] == Type.STRING_TYPE) {
+            } else {
                 StringHistogram stringHistogram = new StringHistogram(NUM_HIST_BINS);
                 stringHistogramMap.put(i,stringHistogram);
             }
         }
+
         addValueToHist();
+
+
+
 
 
         // For this function, you'll have to get the
@@ -158,17 +163,18 @@ public class TableStats {
         // some code goes here
     }
 
-    Type[] getType(TupleDesc tupleDesc) {
-        Type[] types = new Type[this.fieldNum];
-        for (int i = 0;i < this.fieldNum;i++) {
-            Type fieldType = tupleDesc.getFieldType(i);
-            types[i] = fieldType;
+    private Type[] getType(TupleDesc tupleDesc) {
+        int numFields = tupleDesc.numFields();
+        Type[] types = new Type[numFields];
+        for (int i = 0; i <numFields;i++) {
+            types[i] = tupleDesc.getFieldType(i);
         }
         return types;
+
     }
     private void addValueToHist(){
-        TransactionId transactionId = new TransactionId();
-        SeqScan seqScan = new SeqScan(transactionId,this.tableId);
+        TransactionId tid = new TransactionId();
+        SeqScan seqScan = new SeqScan(tid,tableId);
         try {
             seqScan.open();
             while (seqScan.hasNext()) {
@@ -177,19 +183,23 @@ public class TableStats {
                     Field field = tuple.getField(i);
                     Type type = field.getType();
                     if (type == Type.INT_TYPE) {
-                        int value = ((IntField) field).getValue();
-                        this.intHistogramMap.get(i).addValue(value);
+                        IntField intField = (IntField) field;
+                        int value = intField.getValue();
+                        intHistogramMap.get(i).addValue(value);
                     } else {
-                        String value = ((StringField) field).getValue();
-                        this.stringHistogramMap.get(i).addValue(value);
+                        StringField stringField = (StringField) field;
+                        String value = stringField.getValue();
+                        stringHistogramMap.get(i).addValue(value);
                     }
                 }
+
             }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
             seqScan.close();
         }
+
     }
 
     /**
@@ -206,7 +216,8 @@ public class TableStats {
      */
     public double estimateScanCost() {
         // some code goes here
-        return this.ioCostPerPage * this.pageNum;
+        return pageNum * ioCostPerPage;
+
 
 
     }
@@ -221,8 +232,9 @@ public class TableStats {
      *         selectivityFactor
      */
     public int estimateTableCardinality(double selectivityFactor) {
-        double cardinality = selectivityFactor * tupleNum;
-        return (int) cardinality ;
+        double v = selectivityFactor * tupleNum;
+        return (int) v;
+
     }
 
     /**
@@ -237,7 +249,9 @@ public class TableStats {
      * */
     public double avgSelectivity(int field, Predicate.Op op) {
         // some code goes here
-        if(tupleDesc.getFieldType(field) == Type.INT_TYPE) {
+        Type[] type = getType(tupleDesc);
+        Type type1 = type[field];
+        if (type1 == Type.INT_TYPE) {
             return intHistogramMap.get(field).avgSelectivity();
         } else {
             return stringHistogramMap.get(field).avgSelectivity();
@@ -260,13 +274,16 @@ public class TableStats {
      */
     public double estimateSelectivity(int field, Predicate.Op op, Field constant) {
         // some code goes here
-        Type type = constant.getType();
-        if (type == Type.INT_TYPE) {
-            IntField intField = (IntField) constant;
-            return intHistogramMap.get(field).estimateSelectivity(op,intField.getValue());
+        Type fieldType = tupleDesc.getFieldType(field);
+        if (fieldType == Type.INT_TYPE) {
+            IntField field1 = (IntField) constant;
+            int value = field1.getValue();
+            return intHistogramMap.get(field).estimateSelectivity(op,value);
         } else {
             StringField stringField = (StringField) constant;
-            return stringHistogramMap.get(field).estimateSelectivity(op,stringField.getValue());
+            String value = stringField.getValue();
+            return stringHistogramMap.get(field).estimateSelectivity(op,value);
+
         }
 
     }
