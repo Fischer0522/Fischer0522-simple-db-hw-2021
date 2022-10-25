@@ -148,8 +148,9 @@ public class HashEquiJoin extends Operator {
             // if match, create a combined tuple and fill it with the values
             // from both tuples
             List<Tuple> l = map.get(t2.getField(pred.getField2()));
-            if (l == null)
+            if (l == null) {
                 continue;
+            }
             listIt = l.iterator();
 
             return processList();
