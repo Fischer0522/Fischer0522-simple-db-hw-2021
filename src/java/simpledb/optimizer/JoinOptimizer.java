@@ -213,8 +213,9 @@ public class JoinOptimizer {
             for (Set<T> s : els) {
                 for (T t : v) {
                     Set<T> news = new HashSet<>(s);
-                    if (news.add(t))
+                    if (news.add(t)) {
                         newels.add(news);
+                    }
                 }
             }
             els = newels;
@@ -254,33 +255,30 @@ public class JoinOptimizer {
         CostCard bestCostCard = new CostCard();
         PlanCache planCache = new PlanCache();
         int size = joins.size();
-        for(int i = 1; i <= size; i++){
-            // 枚举当前子集的所有大小
+        for (int i = 1; i <= size; i++) {
             Set<Set<LogicalJoinNode>> subSets = enumerateSubsets(joins, i);
-            for(Set<LogicalJoinNode> subSet : subSets){
-                // 最佳花费
-                double bestCostSoFar = Double.MAX_VALUE;
+            for (Set<LogicalJoinNode> subSet : subSets) {
+                Double bestCostSoFar = Double.MAX_VALUE;
                 bestCostCard = new CostCard();
-                for (LogicalJoinNode removeJoinNode : subSet) {
-                    // 计算查询子代价
-                    CostCard costCard = computeCostAndCardOfSubplan(stats, filterSelectivities, removeJoinNode, subSet, bestCostSoFar, planCache);
+                for( LogicalJoinNode j : subSet) {
+                    CostCard costCard = computeCostAndCardOfSubplan(stats, filterSelectivities, j, subSet, bestCostSoFar, planCache);
                     if (costCard != null) {
                         bestCostSoFar = costCard.cost;
                         bestCostCard = costCard;
                     }
                 }
-                // 如果被修改，说明有最佳
-                if(bestCostSoFar != Double.MAX_VALUE){
-                    planCache.addPlan(subSet, bestCostCard.cost, bestCostCard.card, bestCostCard.plan);
+                if (bestCostSoFar != Double.MAX_VALUE) {
+                    planCache.addPlan(subSet,bestCostSoFar, bestCostCard.card,bestCostCard.plan);
                 }
-            }
-            // 是否打印图形化计划
-            if(explain){
-                printJoins(bestCostCard.plan, planCache, stats, filterSelectivities);
-            }
-        }
 
+            }
+            if (explain) {
+                printJoins(bestCostCard.plan,planCache,stats,filterSelectivities);
+            }
+
+        }
         return bestCostCard.plan;
+
     }
 
 
@@ -331,10 +329,12 @@ public class JoinOptimizer {
 
         List<LogicalJoinNode> prevBest;
 
-        if (this.p.getTableId(j.t1Alias) == null)
+        if (this.p.getTableId(j.t1Alias) == null) {
             throw new ParsingException("Unknown table " + j.t1Alias);
-        if (this.p.getTableId(j.t2Alias) == null)
+        }
+        if (this.p.getTableId(j.t2Alias) == null) {
             throw new ParsingException("Unknown table " + j.t2Alias);
+        }
 
         String table1Name = Database.getCatalog().getTableName(
                 this.p.getTableId(j.t1Alias));
@@ -425,8 +425,9 @@ public class JoinOptimizer {
             rightPkey = leftPkey;
             leftPkey = tmp;
         }
-        if (cost1 >= bestCostSoFar)
+        if (cost1 >= bestCostSoFar) {
             return null;
+        }
 
         CostCard cc = new CostCard();
 
@@ -445,8 +446,9 @@ public class JoinOptimizer {
     private boolean doesJoin(List<LogicalJoinNode> joinlist, String table) {
         for (LogicalJoinNode j : joinlist) {
             if (j.t1Alias.equals(table)
-                    || (j.t2Alias != null && j.t2Alias.equals(table)))
+                    || (j.t2Alias != null && j.t2Alias.equals(table))) {
                 return true;
+            }
         }
         return false;
     }
@@ -474,8 +476,9 @@ public class JoinOptimizer {
     private boolean hasPkey(List<LogicalJoinNode> joinlist) {
         for (LogicalJoinNode j : joinlist) {
             if (isPkey(j.t1Alias, j.f1PureName)
-                    || (j.t2Alias != null && isPkey(j.t2Alias, j.f2PureName)))
+                    || (j.t2Alias != null && isPkey(j.t2Alias, j.f2PureName))) {
                 return true;
+            }
         }
         return false;
 

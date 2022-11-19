@@ -78,22 +78,7 @@ public class IntegerAggregator implements Aggregator {
      */
     @Override
     public void mergeTupleIntoGroup(Tuple tup) {
-        if (this.what == Op.MIN) {
-
-            aggHandler.handle(tup);
-        } else if (this.what == Op.MAX) {
-
-            aggHandler.handle(tup);
-        } else if (this.what == Op.SUM) {
-
-            aggHandler.handle(tup);
-        } else if (this.what == Op.AVG) {
-
-            aggHandler.handle(tup);
-        } else if (this.what == Op.COUNT) {
-
-            aggHandler.handle(tup);
-        }
+        aggHandler.handle(tup);
 
         // some code goes here
     }
