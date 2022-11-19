@@ -1,5 +1,7 @@
 package simpledb.storage;
 
+import simpledb.Lock.LockManager;
+import simpledb.Lock.PageLock;
 import simpledb.common.Database;
 import simpledb.common.Permissions;
 import simpledb.common.DbException;
@@ -76,11 +78,14 @@ public class BufferPool {
      *
      * @param numPages maximum number of pages in this buffer pool.
      */
+
+    private LockManager lockManager;
     public BufferPool(int numPages) {
         // some code goes here
         this.numPages = numPages;
         this.pageStore = new ConcurrentHashMap<>();
         this.lruList = new LinkedList<>();
+        this.lockManager = new LockManager();
 
     }
 
@@ -115,6 +120,21 @@ public class BufferPool {
      */
     public Page getPage(TransactionId tid, PageId pid, Permissions perm)
             throws TransactionAbortedException, DbException {
+        int type;
+        if (perm == Permissions.READ_ONLY) {
+            type = PageLock.SHARED;
+        } else {
+            type = PageLock.EXCLUSIVE;
+        }
+        long startTime = System.currentTimeMillis();
+        boolean isAcquired = false;
+        while (!isAcquired) {
+            isAcquired = lockManager.acquiredLock(tid, pid, type);
+            long now = System.currentTimeMillis();
+            if (now - startTime > 500) {
+                throw new TransactionAbortedException();
+            }
+        }
         // some code goes here
         // 如果缓存池中没有
         if(!pageStore.containsKey(pid.hashCode())){
@@ -147,6 +167,7 @@ public class BufferPool {
     public  void unsafeReleasePage(TransactionId tid, PageId pid) {
         // some code goes here
         // not necessary for Exercise1|Exercise2
+        lockManager.releaseLock(tid,pid);
     }
 
     /**
