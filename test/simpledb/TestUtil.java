@@ -351,6 +351,7 @@ public class TestUtil {
                 Database.getBufferPool().getPage(tid, pid, perm);
                 synchronized(alock) {
                     acquired = true;
+
                 }
             } catch (Exception e) {
                 e.printStackTrace();

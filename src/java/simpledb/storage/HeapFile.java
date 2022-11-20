@@ -156,6 +156,8 @@ public class HeapFile implements DbFile {
                 page.insertTuple(t);
                 pages.add(page);
                 return pages;
+            } else {
+                Database.getBufferPool().unsafeReleasePage(tid,heapPageId);
             }
 
         }
