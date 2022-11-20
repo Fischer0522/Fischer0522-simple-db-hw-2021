@@ -307,8 +307,12 @@ public class BufferPool {
                 }
             }
             PageId pageId = page.getId();
-            LinkedNode linkedNode = new LinkedNode(pageId,page);
-            pageStore.put(pageId,linkedNode);
+            LinkedNode linkedNode = pageStore.get(pageId);
+
+                linkedNode.page = page;
+                pageStore.put(pageId,linkedNode);
+
+
         }
     }
 

@@ -16,6 +16,7 @@ public abstract class Operator implements OpIterator {
 
     private static final long serialVersionUID = 1L;
 
+
     @Override
     public boolean hasNext() throws DbException, TransactionAbortedException {
         if (!this.open) {

@@ -29,7 +29,7 @@ import static org.junit.Assert.*;
  * Tests running concurrent transactions.
  * You do not need to pass this test until lab3.
  */
-public class TransactionTest extends SimpleDbTestBase {
+public class                                                    TransactionTest extends SimpleDbTestBase {
     // Wait up to 10 minutes for the test to complete
     private static final int TIMEOUT_MILLIS = 10 * 60 * 1000;
     private void validateTransactions(int threads)
