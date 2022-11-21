@@ -41,6 +41,8 @@ GitHub repository:
 ``` $ cd simple-db-hw $ git pull upstream master ```
 
 
+
+
 ## 2. Search
 
 Take a look at `index/` and `BTreeFile.java`. This is the core file for the implementation of
@@ -58,7 +60,6 @@ the first header page. This singleton page is implemented in
 `BTreeRootPtrPage.java`. Familiarize yourself with the interfaces of these
 classes, especially `BTreePage`, `BTreeInternalPage` and `BTreeLeafPage`. You
 will need to use these classes in your implementation of the B+Tree.
-
 
 Your first job is to implement the `findLeafPage()` function in
 `BTreeFile.java`. This function is used to find the appropriate leaf page given

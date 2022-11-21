@@ -53,12 +53,9 @@ public class BufferPool {
         LinkedNode prev;
         LinkedNode next;
         // head与tail均为dummy节点，仅为表示，不真实存储数据
-
-
         public LinkedNode() {
 
         }
-
         public LinkedNode(PageId pageId, Page page) {
             this.pageId = pageId;
             this.page = page;
@@ -217,8 +214,8 @@ public class BufferPool {
     public boolean holdsLock(TransactionId tid, PageId p) {
         // some code goes here
         // not necessary for Exercise1|Exercise2
+        return lockManager.isHoldLock(tid, p);
 
-        return false;
     }
 
     /**
@@ -241,8 +238,6 @@ public class BufferPool {
             restorePages(tid);
         }
         lockManager.completeTransaction(tid);
-
-
     }
 
 
@@ -264,8 +259,8 @@ public class BufferPool {
     public void insertTuple(TransactionId tid, int tableId, Tuple t)
             throws DbException, IOException, TransactionAbortedException {
         // some code goes here
-        HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
-        List<Page> pages = heapFile.insertTuple(tid, t);
+        DbFile dbFile =  Database.getCatalog().getDatabaseFile(tableId);
+        List<Page> pages = dbFile.insertTuple(tid, t);
         updateBufferPool(pages, tid);
         // not necessary for Exercise1
     }
@@ -287,8 +282,8 @@ public class BufferPool {
             throws DbException, IOException, TransactionAbortedException {
         PageId pageId = t.getRecordId().getPageId();
         int tableId = pageId.getTableId();
-        HeapFile heapFile = (HeapFile) Database.getCatalog().getDatabaseFile(tableId);
-        ArrayList<Page> pages = heapFile.deleteTuple(tid, t);
+        DbFile dbFile =  Database.getCatalog().getDatabaseFile(tableId);
+        List<Page> pages = dbFile.deleteTuple(tid, t);
         updateBufferPool(pages, tid);
 
         // some code goes here
@@ -306,13 +301,29 @@ public class BufferPool {
                     e.printStackTrace();
                 }
             }
-            PageId pageId = page.getId();
-            LinkedNode linkedNode = pageStore.get(pageId);
-
-                linkedNode.page = page;
-                pageStore.put(pageId,linkedNode);
-
-
+            LinkedNode node;
+            if(pageStore.containsKey(page.getId())){
+                // 获取节点，此时的页一定已经在缓存了，因为刚刚被修改的时候就已经放入缓存了
+                node = pageStore.get(page.getId());
+                // 更新新的页内容
+                node.page = page;
+            }
+            // 如果没有当前节点，新建放入缓存
+            else{
+                // 是否超过大小
+                if(pageStore.size() >= numPages){
+                    // 使用 LRU 算法进行淘汰最近最久未使用
+                    try {
+                        evictPage();
+                    } catch (DbException e) {
+                        e.printStackTrace();
+                    }
+                }
+                node = new LinkedNode(page.getId(), page);
+                addToHead(node);
+            }
+            // 更新到缓存
+            pageStore.put(page.getId(), node);
         }
     }
 
