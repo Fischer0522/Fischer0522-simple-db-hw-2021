@@ -42,7 +42,12 @@ public class BTreeChecker {
 
         static SubtreeSummary checkAndMerge(SubtreeSummary accleft, SubtreeSummary right) {
             assert(accleft.depth == right.depth);
+
+
             assert(accleft.ptrRight.equals(right.leftmostId));
+            if (!accleft.rightmostId.equals(right.ptrLeft)) {
+                System.out.println(accleft.ptrLeft+ "  "+right.rightmostId);
+            }
             assert(accleft.rightmostId.equals(right.ptrLeft));
 
             SubtreeSummary ans = new SubtreeSummary();
