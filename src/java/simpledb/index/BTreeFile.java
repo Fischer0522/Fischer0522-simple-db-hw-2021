@@ -256,11 +256,13 @@ public class BTreeFile implements DbFile {
 		BTreeLeafPage newRightPage = (BTreeLeafPage) getEmptyPage(tid, dirtypages, BTreePageId.LEAF);
 		int numTuples = page.getNumTuples();
 		Iterator<Tuple> iterator = page.reverseIterator();
+		// 将一半的节点转移至新节点，逆序遍历进行添加
 		for (int i =0; i < numTuples / 2;i++) {
 			Tuple next = iterator.next();
 			page.deleteTuple(next);
 			newRightPage.insertTuple(next);
 		}
+		// 如果原节点的右侧存在节点oldRightPage，那么就需要将oldRightPage和newRightPage进行连接
 		BTreePageId oldRightSiblingId = page.getRightSiblingId();
 		BTreeLeafPage oldRightPage = null;
 		if (oldRightSiblingId != null) {
@@ -272,17 +274,18 @@ public class BTreeFile implements DbFile {
 			dirtypages.put(oldRightSiblingId,oldRightPage);
 		}
 
+		// 将原节点和新节点进行连接
 		page.setRightSiblingId(newRightPage.getId());
 		newRightPage.setLeftSiblingId(page.getId());
 		dirtypages.put(page.getId(), page);
 		dirtypages.put(newRightPage.getId(),newRightPage);
-
+		// 对于叶子节点的复制，需要将中间节点复制一份到父节点当中
 		BTreeInternalPage parent = getParentWithEmptySlots(tid, dirtypages, page.getParentId(), field);
 		Field mid = newRightPage.iterator().next().getField(keyField);
 		BTreeEntry entry = new BTreeEntry(mid, page.getId(), newRightPage.getId());
 		parent.insertEntry(entry);
 		dirtypages.put(parent.getId(),parent);
-
+		// 更新父节点的指针，修改指向原本page的指针，添加指向newRightPage的指针
 		updateParentPointers(tid,dirtypages,parent);
 		if (field.compare(Op.GREATER_THAN_OR_EQ,mid)) {
 			return newRightPage;
@@ -326,15 +329,18 @@ public class BTreeFile implements DbFile {
 	public BTreeInternalPage splitInternalPage(TransactionId tid, Map<PageId, Page> dirtypages,
 			BTreeInternalPage page, Field field) 
 					throws DbException, IOException, TransactionAbortedException {
-
+		//  将原本的一半节点逆序遍历插入到新的
 		BTreeInternalPage newRightPage = (BTreeInternalPage) getEmptyPage(tid, dirtypages, BTreePageId.INTERNAL);
 		int numEntries = page.getNumEntries();
 		Iterator<BTreeEntry> iterator = page.reverseIterator();
 		for (int i = 0; i < numEntries / 2;i++) {
 			BTreeEntry next = iterator.next();
+			// 从右侧开始遍历删除，因此为删除节点本身在加上右节点
 			page.deleteKeyAndRightChild(next);
 			newRightPage.insertEntry(next);
 		}
+		// 对于内部节点，与叶子节点不同，需要将mid节点 push 一份到parent节点当中
+		// 并且原本分裂得到的两个节点作为mid节点的左右子节点
 		BTreeEntry mid = iterator.next();
 		page.deleteKeyAndRightChild(mid);
 		mid.setLeftChild(page.getId());
@@ -344,10 +350,11 @@ public class BTreeFile implements DbFile {
 		dirtypages.put(parent.getId(),parent);
 		dirtypages.put(page.getId(),page);
 		dirtypages.put(newRightPage.getId(),newRightPage);
+		// 更新三者的指向关系
 		updateParentPointers(tid,dirtypages,parent);
 		updateParentPointers(tid,dirtypages,page);
 		updateParentPointers(tid,dirtypages,newRightPage);
-
+		// 判断新插入的节点位于左侧还是右侧
 		if (field.compare(Op.GREATER_THAN_OR_EQ, mid.getKey())) {
 			return newRightPage;
 		}

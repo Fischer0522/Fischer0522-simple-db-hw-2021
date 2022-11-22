@@ -353,9 +353,11 @@ public class BufferPool {
      * are removed from the cache so they can be reused safely
      */
     public synchronized void discardPage(PageId pid) {
+        if (pageStore.get(pid) != null) {
+            remove(pageStore.get(pid));
+            pageStore.remove(pid);
+        }
         // some code goes here
-        remove(pageStore.get(pid));
-        pageStore.remove(pid);
         // not necessary for Exercise1
     }
 
