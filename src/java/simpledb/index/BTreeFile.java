@@ -659,6 +659,26 @@ public class BTreeFile implements DbFile {
 	 */
 	public void stealFromLeafPage(BTreeLeafPage page, BTreeLeafPage sibling,
 			BTreeInternalPage parent, BTreeEntry entry, boolean isRightSibling) throws DbException {
+		Iterator<Tuple> iterator = null;
+		if (isRightSibling) {
+			iterator = sibling.iterator();;
+		} else {
+			iterator = sibling.reverseIterator();
+		}
+		int currentPageNum = page.getNumTuples();
+		int siblingPageNum = sibling.getNumTuples();
+		int targetPageNum = (currentPageNum + siblingPageNum) / 2;
+		while (currentPageNum < targetPageNum) {
+			Tuple next = iterator.next();
+			sibling.deleteTuple(next);
+			page.insertTuple(next);
+			currentPageNum++;
+		}
+
+		Tuple mid = iterator.next();
+		entry.setKey(mid.getField(keyField));
+		parent.updateEntry(entry);
+
 		// some code goes here
         //
         // Move some of the tuples from the sibling to the page so
@@ -743,6 +763,35 @@ public class BTreeFile implements DbFile {
 		// that the entries are evenly distributed. Be sure to update
 		// the corresponding parent entry. Be sure to update the parent
 		// pointers of all children in the entries that were moved.
+		int currentNumEntries = page.getNumEntries();
+		int siblingNumEntries = leftSibling.getNumEntries();
+		int targetNumEntries = (currentNumEntries + siblingNumEntries) / 2;
+
+		Iterator<BTreeEntry> iterator = leftSibling.reverseIterator();
+		BTreeEntry entry = iterator.next();
+
+
+		BTreeEntry mid = new BTreeEntry(parentEntry.getKey(),entry.getRightChild(),page.iterator().next().getLeftChild());
+		page.insertEntry(mid);
+		currentNumEntries++;
+
+		while (currentNumEntries < targetNumEntries) {
+			leftSibling.deleteKeyAndRightChild(entry);
+			page.insertEntry(entry);
+			entry = iterator.next();
+			currentNumEntries ++;
+		}
+		leftSibling.deleteKeyAndRightChild(entry);
+		parentEntry.setKey(entry.getKey());
+		parent.updateEntry(parentEntry);
+
+		dirtypages.put(page.getId(), page);
+		dirtypages.put(leftSibling.getId(), leftSibling);
+		dirtypages.put(parent.getId(), parent);
+		updateParentPointers(tid,dirtypages,page);
+
+
+
 	}
 	
 	/**

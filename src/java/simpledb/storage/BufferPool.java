@@ -356,6 +356,8 @@ public class BufferPool {
         if (pageStore.get(pid) != null) {
             remove(pageStore.get(pid));
             pageStore.remove(pid);
+        } else {
+            System.out.println("try to delete a page that not exist");
         }
         // some code goes here
         // not necessary for Exercise1
