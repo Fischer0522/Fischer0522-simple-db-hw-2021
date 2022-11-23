@@ -273,4 +273,4 @@ score given will be your grade for the autograded portion of the assignment. An 
 based on the quality of your writeup and our subjective evaluation of your code. This part will also be published on
 gradescope after we finish grading your assignment.
 
-We had a lot of fun designing this assignment, and we hope you enjoy hacking on it!
+We had a lot of fun designing this assignment, and we hope you enjoy hacking on it!      
