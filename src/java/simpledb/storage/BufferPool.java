@@ -6,6 +6,8 @@ import simpledb.common.Database;
 import simpledb.common.Permissions;
 import simpledb.common.DbException;
 import simpledb.common.DeadlockException;
+import simpledb.storage.evict.EvictStrategy;
+import simpledb.storage.evict.LRUEvict;
 import simpledb.transaction.TransactionAbortedException;
 import simpledb.transaction.TransactionId;
 
@@ -14,6 +16,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,51 +48,11 @@ public class BufferPool {
     // 页面的最大数量
     private final int numPages;
     // 储存的页面
-    private final ConcurrentHashMap<PageId, LinkedNode> pageStore;
+    private final ConcurrentHashMap<PageId, Page> pageStore;
 
-    private class LinkedNode {
-        PageId pageId;
-        Page page;
-        LinkedNode prev;
-        LinkedNode next;
-        // head与tail均为dummy节点，仅为表示，不真实存储数据
-        public LinkedNode() {
-
-        }
-        public LinkedNode(PageId pageId, Page page) {
-            this.pageId = pageId;
-            this.page = page;
-        }
+    private EvictStrategy evict;
 
 
-    }
-
-    LinkedNode head;
-    LinkedNode tail;
-
-    private void addToHead(LinkedNode node) {
-        node.prev = head;
-        node.next = head.next;
-        head.next.prev = node;
-        head.next = node;
-
-    }
-
-    private void remove(LinkedNode node) {
-        node.prev.next = node.next;
-        node.next.prev = node.prev;
-    }
-
-    private void moveToHead(LinkedNode node) {
-        remove(node);
-        addToHead(node);
-    }
-
-    private LinkedNode removeTail() {
-        LinkedNode node = tail.prev;
-        remove(node);
-        return node;
-    }
 
     /**
      * Creates a BufferPool that caches up to numPages pages.
@@ -103,10 +66,7 @@ public class BufferPool {
         // some code goes here
         this.numPages = numPages;
         this.pageStore = new ConcurrentHashMap<>();
-        head = new LinkedNode(new HeapPageId(-1, -1), null);
-        tail = new LinkedNode(new HeapPageId(-1, -1), null);
-        head.next = tail;
-        tail.prev = head;
+        this.evict = new LRUEvict(numPages);
         this.lockManager = new LockManager();
 
     }
@@ -167,19 +127,17 @@ public class BufferPool {
             DbFile dbFile = Database.getCatalog().getDatabaseFile(pid.getTableId());
             Page page = dbFile.readPage(pid);
             // 是否超过大小
+            evict.modifyData(pid);
             if (pageStore.size() >= numPages) {
                 // 淘汰 (后面的 Exercise 书写)
                 evictPage();
             }
             // 放入缓存
 
-            LinkedNode linkedNode = new LinkedNode(page.getId(), page);
-            pageStore.put(pid, linkedNode);
-            addToHead(linkedNode);
-
+            pageStore.put(pid, page);
         }
         // 从 缓存池 中获取
-        return pageStore.get(pid).page;
+        return pageStore.get(pid);
     }
 
     /**
@@ -294,36 +252,37 @@ public class BufferPool {
         for (Page page : pages) {
             page.markDirty(true, tid);
 
-            if (pageStore.size() > numPages) {
+            if (pageStore.size() >= numPages) {
                 try {
                     evictPage();
                 } catch (DbException e) {
                     e.printStackTrace();
                 }
             }
-            LinkedNode node;
-            if(pageStore.containsKey(page.getId())){
-                // 获取节点，此时的页一定已经在缓存了，因为刚刚被修改的时候就已经放入缓存了
-                node = pageStore.get(page.getId());
-                // 更新新的页内容
-                node.page = page;
-            }
-            // 如果没有当前节点，新建放入缓存
-            else{
-                // 是否超过大小
-                if(pageStore.size() >= numPages){
-                    // 使用 LRU 算法进行淘汰最近最久未使用
-                    try {
-                        evictPage();
-                    } catch (DbException e) {
-                        e.printStackTrace();
-                    }
-                }
-                node = new LinkedNode(page.getId(), page);
-                addToHead(node);
-            }
-            // 更新到缓存
-            pageStore.put(page.getId(), node);
+            pageStore.put(page.getId(),page);
+//            LinkedNode node;
+//            if(pageStore.containsKey(page.getId())){
+//                // 获取节点，此时的页一定已经在缓存了，因为刚刚被修改的时候就已经放入缓存了
+//                node = pageStore.get(page.getId());
+//                // 更新新的页内容
+//                node.page = page;
+//            }
+//            // 如果没有当前节点，新建放入缓存
+//            else{
+//                // 是否超过大小
+//                if(pageStore.size() >= numPages){
+//                    // 使用 LRU 算法进行淘汰最近最久未使用
+//                    try {
+//                        evictPage();
+//                    } catch (DbException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//                node = new LinkedNode(page.getId(), page);
+//                addToHead(node);
+//            }
+//            // 更新到缓存
+//            pageStore.put(page.getId(), node);
         }
     }
 
@@ -335,7 +294,7 @@ public class BufferPool {
      */
     public synchronized void flushAllPages() throws IOException {
         // some code goes here
-        ConcurrentHashMap.KeySetView<PageId, LinkedNode> pageIds = pageStore.keySet();
+        ConcurrentHashMap.KeySetView<PageId, Page> pageIds = pageStore.keySet();
         for (PageId pageId : pageIds) {
             flushPage(pageId);
         }
@@ -354,7 +313,7 @@ public class BufferPool {
      */
     public synchronized void discardPage(PageId pid) {
         if (pageStore.containsKey(pid)) {
-            remove(pageStore.get(pid));
+            //remove(pageStore.get(pid));
             pageStore.remove(pid);
         } else {
             System.out.println("try to delete a page that not exist");
@@ -373,7 +332,7 @@ public class BufferPool {
         // a before-image and after-image.
 
         // some code goes here
-        Page page = pageStore.get(pid).page;
+        Page page = pageStore.get(pid);
         TransactionId dirtier = page.isDirty();
 
         if (dirtier != null) {
@@ -393,28 +352,25 @@ public class BufferPool {
     public synchronized void flushPages(TransactionId tid) throws IOException {
         // some code goes here
         // not necessary for Exercise1|Exercise2
-        for (LinkedNode linkedNode : pageStore.values()) {
-            Page page = linkedNode.page;
-            PageId pageId = linkedNode.pageId;
-            if (tid.equals(page.isDirty())) {
-                flushPage(pageId);
-                page.setBeforeImage();
+        for (Map.Entry<PageId, Page> entry : pageStore.entrySet()) {
+            Page page = entry.getValue();
+            page.setBeforeImage();
+            if (page.isDirty() == tid) {
+                flushPage(page.getId());
             }
         }
     }
 
     public synchronized void restorePages(TransactionId tid) {
-        for (LinkedNode linkedNode : pageStore.values()) {
-            Page page = linkedNode.page;
-            PageId pageId = linkedNode.pageId;
+        for (Page page : pageStore.values()) {
+
+            PageId pageId = page.getId();
             if (tid.equals(page.isDirty())) {
                 int tableId = pageId.getTableId();
                 DbFile databaseFile = Database.getCatalog().getDatabaseFile(tableId);
                 Page pageFromDisk = databaseFile.readPage(pageId);
+                pageStore.put(pageId,pageFromDisk);
 
-                linkedNode.page = pageFromDisk;
-                pageStore.put(pageId,linkedNode);
-                moveToHead(linkedNode);
             }
 
 
@@ -429,17 +385,17 @@ public class BufferPool {
         // some code goes here
         // not necessary for Exercise1
         for (int i = 0; i < numPages; i++) {
-            LinkedNode linkedNode = removeTail();
-            Page page = linkedNode.page;
+            PageId evictPageId = evict.getEvictPageId();
+            Page page = pageStore.get(evictPageId);
             if (page.isDirty() != null) {
-                addToHead(linkedNode);
+                evict.modifyData(evictPageId);
             } else {
                 try {
-                    flushPage(linkedNode.pageId);
+                    flushPage(evictPageId);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                pageStore.remove(linkedNode.pageId);
+                pageStore.remove(evictPageId);
                 return;
             }
         }
