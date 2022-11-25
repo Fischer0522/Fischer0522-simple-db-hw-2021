@@ -353,9 +353,10 @@ public class BufferPool {
         // some code goes here
         // not necessary for Exercise1|Exercise2
         for (Map.Entry<PageId, Page> entry : pageStore.entrySet()) {
+
             Page page = entry.getValue();
             page.setBeforeImage();
-            if (page.isDirty() == tid) {
+            if (tid.equals(page.isDirty())) {
                 flushPage(page.getId());
             }
         }

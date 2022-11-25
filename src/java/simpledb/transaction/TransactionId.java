@@ -16,6 +16,9 @@ public class TransactionId implements Serializable {
     public TransactionId() {
         myid = counter.getAndIncrement();
     }
+	private TransactionId(long id) {
+		myid = id;
+	}
 
     public long getId() {
         return myid;
@@ -39,5 +42,9 @@ public class TransactionId implements Serializable {
 		int result = 1;
 		result = prime * result + (int) (myid ^ (myid >>> 32));
 		return result;
+	}
+
+	public static TransactionId of (long id) {
+		return new TransactionId(id);
 	}
 }

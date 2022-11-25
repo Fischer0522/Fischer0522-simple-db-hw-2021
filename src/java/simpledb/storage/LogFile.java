@@ -8,6 +8,7 @@ import simpledb.common.Debug;
 import java.io.*;
 import java.util.*;
 import java.lang.reflect.*;
+import java.util.logging.LogRecord;
 
 /*
 LogFile implements the recovery subsystem of SimpleDb.  This class is
@@ -464,11 +465,11 @@ public class LogFile {
                 //移动到日志开始的地方
                 raf.seek(firstLogRecord);
                 Set<PageId> set = new HashSet<>();
+                print();
                 while (true) {
                     try {
                         //Each log record begins with an integer type and a long integer
                         //transaction id.
-                        print();
                         int type = raf.readInt();
                         long txid = raf.readLong();
                         switch (type) {
@@ -532,6 +533,7 @@ public class LogFile {
         committed transactions are installed and that the
         updates of uncommitted transactions are not installed.
     */
+
     public void recover() throws IOException {
         synchronized (Database.getBufferPool()) {
             synchronized (this) {
@@ -539,15 +541,32 @@ public class LogFile {
                 // some code goes here
                 raf = new RandomAccessFile(logFile, "rw");
                 //已提交的事务id集合
-                Set<Long> committedId = new HashSet<>();
+                List<Long> committedId = new ArrayList<>();
                 //存放事务id对应的beforePage和afterPage
                 Map<Long, List<Page>> beforePages = new HashMap<>();
                 Map<Long, List<Page>> afterPages = new HashMap<>();
+                Map<Long,Long> activeTxid = new HashMap<>();
                 //获取checkpoint
                 Long checkpoint = raf.readLong();
                 if (checkpoint != -1) {
-//                    raf.seek(checkpoint);
+                    raf.seek(checkpoint);
+                    System.out.println(checkpoint);
+                    raf.seek(checkpoint);
+                    raf.readLong();
+                    raf.readInt();
+                    int i = raf.readInt();
+
+                    while (i -- > 0) {
+                        long l1 = raf.readLong();
+                        long offset = raf.readLong();
+                        activeTxid.put(l1,offset);
+
+                    }
+
+                    raf.readLong();
+                    print();
                 }
+                System.out.println("this active transaction Id is:"+ activeTxid);
                 while (true) {
                     try {
                         int type = raf.readInt();
@@ -585,7 +604,8 @@ public class LogFile {
                 }
 
                 //处理未提交事务，直接写before-image
-                for (long txid :beforePages.keySet()) {
+
+                for (long txid : beforePages.keySet()) {
                     if (!committedId.contains(txid)) {
                         List<Page> pages = beforePages.get(txid);
                         for (Page p : pages) {
@@ -604,11 +624,68 @@ public class LogFile {
                     }
                 }
 
+                if (checkpoint != -1) {
+                    for(long txid : activeTxid.keySet()) {
+                        Long offset = activeTxid.get(txid);
+                        raf.seek(offset);
+                        Set<Page> beforePageSet = new HashSet<>();
+                        Set<Page> afterPageSet = new HashSet<>();
+                        while (true) {
+                            try {
+                                int type = raf.readInt();
+                                long tid = raf.readLong();
+                                switch (type) {
+                                    case UPDATE_RECORD:
+                                        Page beforePage = readPageData(raf);
+                                        if ( txid == tid) {
+                                            beforePageSet.add(beforePage);
 
+
+                                        }
+                                        Page afterPage = readPageData(raf);
+                                        if ( txid == tid) {
+                                            afterPageSet.add(afterPage);
+                                        }
+
+                                        break;
+                                    case CHECKPOINT_RECORD:
+                                        int numTxs = raf.readInt();
+                                        while (numTxs -- > 0) {
+                                            raf.readLong();
+                                            raf.readLong();
+                                        }
+                                        break;
+                                    default:
+                                        break;
+
+                                }
+                                raf.readLong();
+                            } catch (EOFException e) {
+                                break;
+                            }
+
+                        }
+                        if (committedId.contains(txid)) {
+                            for(Page page : afterPageSet) {
+                                PageId pageId = page.getId();
+
+                                Database.getCatalog().getDatabaseFile(pageId.getTableId()).writePage(page);
+
+                            }
+                        } else {
+                            for(Page page : beforePageSet) {
+                                PageId pageId = page.getId();
+                             
+                                Database.getCatalog().getDatabaseFile(pageId.getTableId()).writePage(page);
+                                break;
+                            }
+                        }
+                    }
+                }
             }
         }
-    }
 
+    }
 
     /** Print out a human readable represenation of the log */
     public void print() throws IOException {

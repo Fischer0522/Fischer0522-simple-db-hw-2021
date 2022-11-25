@@ -290,7 +290,6 @@ public class LogTest extends SimpleDbTestBase {
         // T2 inserts but aborts
         // T3 inserts and commit
         // only T1 and T3 data should be there
-
         doInsert(hf1, 5, -1);
         dontInsert(hf1, 6);
         doInsert(hf1, 7, -1);
@@ -412,6 +411,7 @@ public class LogTest extends SimpleDbTestBase {
         Database.getLogFile().logCheckpoint();
 
         Transaction t3 = new Transaction();
+        System.out.println("tid      "+t3.getId().getId());
         t3.start();
         insertRow(hf2, t3, 28);
         Database.getBufferPool().flushAllPages(); // XXX defeat NO-STEAL-based abort

@@ -85,7 +85,7 @@ Here's what to do:
    of the page.
    (Note: We can't just call `setBeforeImage()` in
    `flushPage()`, since `flushPage()`
-   might be called even if a transaction isn't committing. Our test case actually
+   might be called even if a transaction isn't commzaiitting. Our test case actually
    does that! If you implemented
    `transactionComplete()` by calling `flushPages()`
    instead, you may need to pass an additional
