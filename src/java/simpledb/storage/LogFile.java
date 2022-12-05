@@ -675,7 +675,7 @@ public class LogFile {
                         } else {
                             for(Page page : beforePageSet) {
                                 PageId pageId = page.getId();
-                             
+
                                 Database.getCatalog().getDatabaseFile(pageId.getTableId()).writePage(page);
                                 break;
                             }
